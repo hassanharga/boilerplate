@@ -1,0 +1,98 @@
+{
+  "cleanupPeriodDays": 365,
+  "env": {
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "75",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "DISABLE_TELEMETRY": "1",
+    "DISABLE_ERROR_REPORTING": "1",
+    "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1"
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "includeCoAuthoredBy": false,
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Glass.aiff"
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Basso.aiff"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Ping.aiff"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Hero.aiff"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash /Users/hharga/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "code-simplifier@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    }
+  },
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": [
+      "Hallucinating responsibly",
+      "Pretending to think",
+      "Confidently guessing",
+      "Blaming the context window",
+      "Consulting my imagination",
+      "Speedrunning your tech debt",
+      "Overthinking this",
+      "Apologizing in advance",
+      "Vibing with your codebase",
+      "Submitting my best guess"
+    ]
+  },
+  "effortLevel": "high",
+  "includeCoAutheredBy": false,
+  "disableTelemetry": true,
+  "disableErrorReporting": true,
+  "disableFeedbackDisplay": true
+}

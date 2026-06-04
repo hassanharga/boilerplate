@@ -1,0 +1,33 @@
+services:
+  redis:
+    image: redis:8.2
+    healthcheck:
+      # Command to check if the container is healthy
+      # This runs inside the container. "redis-cli ping" should return "PONG" for Redis.
+      test: ['CMD', 'redis-cli', 'ping']
+
+      # How often to run the health check (every 3 seconds)
+      interval: 3s
+
+      # Maximum time allowed for the health check to run before considering it failed
+      timeout: 2s
+
+      # Number of consecutive failures needed before marking the container as unhealthy
+      retries: 5
+    container_name: redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    restart: on-failure
+    volumes:
+      - redis-data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - '6379:6379'
+    networks:
+      - redis-network
+
+volumes:
+  redis-data:
+
+networks:
+  redis-network:
+    driver: bridge

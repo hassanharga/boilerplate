@@ -1,0 +1,45 @@
+services:
+  mongodb:
+    image: mongo:8
+    environment:
+      MONGO_INITDB_DATABASE: mob-dispatch-service
+    container_name: mongodb
+    command: '--bind_ip_all --quiet --logpath /dev/null --replSet rs0'
+    restart: on-failure
+    ports:
+      - '27017:27017'
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    volumes:
+      - mongodb-data:/data/db
+      - ./mongodb/mongod.conf:/etc/mongod.conf
+    networks:
+      - mongodb-network
+
+  mongo-init:
+    image: mongo:8
+    restart: 'no'
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command: >
+      mongosh --host mongodb:27017 --eval
+      '
+      rs.initiate( {
+         _id : "rs0",
+         members: [
+            { _id: 0, host: "localhost:27017" }
+         ]
+      })
+      '
+    networks:
+      - mongodb-network
+
+volumes:
+  mobility-private-database-data:
+networks:
+  mongodb-network:

@@ -1,0 +1,32 @@
+services:
+  postgres:
+    # image: postgres:18-alpine
+    image: postgres:latest
+    container_name: initial-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    # networks:
+    #   - backend
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  # adminer:
+  #   image: adminer
+  #   restart: always
+  #   depends_on:
+  #     - postgres
+  #   ports:
+  #     - 8080:8080
+  #   networks:
+  #     - backend
+
+volumes:
+  postgres-data:
+# networks:
+#   backend:
+#     driver: bridge

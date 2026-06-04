@@ -1,0 +1,43 @@
+services:
+  mongodb:
+    image: mongo:8
+    healthcheck:
+      # The health check command: try to connect to MongoDB using the mongo shell
+      # and run a simple 'ping' command on the admin database.
+      test:
+        [
+          "CMD-SHELL",
+          "echo 'db.runCommand({ ping: 1 })' | mongosh localhost:27017/test --quiet || exit 1",
+        ]
+
+      # Run the health check every 5 seconds
+      interval: 5s
+
+      # Wait up to 3 seconds for the command to succeed before considering it a failure
+      timeout: 3s
+
+      # Consider the container unhealthy after 5 failed attempts
+      retries: 5
+
+      # Wait 5 seconds before starting the first health check after the container starts
+      start_period: 5s
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_DATABASE: mob-dispatch-service
+    ports:
+      - "27017:27017"
+    command: mongod --config /etc/mongod.conf
+    restart: on-failure
+    volumes:
+      - mongodb-data:/data/db
+      - ./mongodb/mongod.conf:/etc/mongod.conf
+    networks:
+      - mongodb-network
+
+volumes:
+  redis-data:
+  mongodb-data:
+
+networks:
+  mongodb-network:
+    driver: bridge
