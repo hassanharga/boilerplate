@@ -60,6 +60,10 @@ A senior-focused reference covering Node.js core, Express, Fastify, NestJS, data
 37. [Testing Node.js](#37-testing-nodejs)
 38. [Package Managers & Workspaces](#38-package-managers--workspaces)
 39. [Development Workflow](#39-development-workflow)
+40. [dependencies vs devDependencies](#40-dependencies-vs-devdependencies)
+
+### Part 3 (continued): NestJS
+41. [Dependency Injection](#41-dependency-injection)
 
 ---
 
@@ -2877,4 +2881,216 @@ Always run `tsc --noEmit` as a separate CI step — hot-reload tools that skip t
 
 ---
 
-*Last updated: 2026-06-04*
+## 40. dependencies vs devDependencies
+
+`package.json` separates packages by **when they're needed**: at runtime in production vs only during development/build.
+
+```jsonc
+{
+  "dependencies": {
+    "express": "^4.19.0",        // imported by code that runs in production
+    "pg": "^8.11.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",      // only needed to build, never at runtime
+    "vitest": "^2.0.0",          // tests don't run in production
+    "@types/express": "^4.17.0", // type definitions — compile-time only
+    "eslint": "^9.0.0",
+    "tsx": "^4.16.0"
+  }
+}
+```
+
+**How they're installed:**
+
+```bash
+npm install express        # adds to "dependencies"
+npm install -D typescript  # adds to "devDependencies" (--save-dev)
+
+# Production install — skips devDependencies entirely
+npm install --omit=dev     # (npm 8+; older: --production)
+NODE_ENV=production npm ci  # CI: clean install, respects NODE_ENV
+```
+
+**The distinction matters because:**
+
+| Concern | Why the split helps |
+|---------|--------------------|
+| Image size | `--omit=dev` in production Docker images drops TypeScript, test runners, linters — smaller, faster deploys |
+| Security surface | Fewer installed packages in production = smaller attack surface, fewer CVEs to patch |
+| Install speed | Production/CI deploy installs only what runs |
+| Intent / documentation | Clearly signals which packages ship vs which are tooling |
+
+**The key rule:** if `import`/`require` of the package executes when your app runs in production, it's a **dependency**. If it's only used to build, test, lint, or type-check, it's a **devDependency**.
+
+**Common mistakes:**
+
+```jsonc
+// ❌ TypeScript types in dependencies — they're erased at compile time, never run
+"dependencies": { "@types/node": "^20.0.0" }
+
+// ❌ A build-time tool that the runtime actually imports — must be a real dependency
+//    e.g. if you import a helper from a "dev" package at runtime, prod install breaks
+
+// ⚠️ Compiled output gotcha: if you build to JS and ship dist/, the BUILD happens
+//    where devDependencies ARE installed (CI), so tsc being a devDependency is fine.
+//    But if you ship .ts and run with tsx in prod, tsx must be a dependency.
+```
+
+**Two other categories:**
+
+```jsonc
+{
+  // peerDependencies — "I need this, but the HOST app provides it" (libraries/plugins)
+  "peerDependencies": { "react": ">=18" },
+  // A React component library declares react as a peer so it uses the app's single copy
+
+  // optionalDependencies — install failure is non-fatal (e.g. platform-specific binaries)
+  "optionalDependencies": { "fsevents": "^2.3.0" }  // macOS-only file watcher
+}
+```
+
+**Interview gotcha:** *"Where do `@types/*` packages go?"* → devDependencies. They exist only for the TypeScript compiler; the emitted JavaScript contains no trace of them. The exception is when you publish a library whose **public types** reference another package's types — then it may need to be a regular dependency so consumers get the types.
+
+---
+
+## Part 3 (continued): NestJS
+
+---
+
+## 41. Dependency Injection
+
+Dependency Injection (DI) is a pattern where a class receives its dependencies from the outside instead of creating them itself. The "inversion of control" is that the class no longer controls *how* its collaborators are built.
+
+### The problem with `new`
+
+```ts
+// ❌ Tight coupling — UserService creates its own dependencies
+class UserService {
+  private db = new PostgresDatabase('postgres://localhost/mydb'); // hard-coded
+  private mailer = new SmtpMailer('smtp.gmail.com');              // hard-coded
+
+  async register(email: string) {
+    const user = await this.db.insert('users', { email });
+    await this.mailer.send(email, 'Welcome!');
+    return user;
+  }
+}
+```
+
+What's wrong:
+- **Untestable** — you can't swap `PostgresDatabase` for a fake. Every test hits a real DB and sends real email.
+- **Rigid** — switching to `MySqlDatabase` means editing `UserService`'s internals.
+- **Hidden dependencies** — you can't tell what `UserService` needs without reading its body.
+- **Duplicated wiring** — the connection string is buried here instead of configured once centrally.
+
+### The DI version
+
+```ts
+interface Database { insert(table: string, data: object): Promise<any>; }
+interface Mailer { send(to: string, body: string): Promise<void>; }
+
+// ✓ Dependencies are passed IN via the constructor
+class UserService {
+  constructor(
+    private readonly db: Database,    // depends on an abstraction, not a concrete class
+    private readonly mailer: Mailer,
+  ) {}
+
+  async register(email: string) {
+    const user = await this.db.insert('users', { email });
+    await this.mailer.send(email, 'Welcome!');
+    return user;
+  }
+}
+
+// Composition root — wiring happens in ONE place
+const db = new PostgresDatabase(process.env.DATABASE_URL);
+const mailer = new SmtpMailer(process.env.SMTP_HOST);
+const userService = new UserService(db, mailer);
+
+// In a test — inject fakes, no real DB or email
+const fakeDb = { insert: async () => ({ id: 1, email: 'a@b.com' }) };
+const fakeMailer = { send: async () => {} };
+const service = new UserService(fakeDb, fakeMailer);
+```
+
+### `new` vs DI — what actually changes
+
+| | `new` inside the class | Dependency Injection |
+|--|------------------------|----------------------|
+| Who creates dependencies | The class itself | The caller / DI container |
+| Coupling | To concrete classes | To interfaces/abstractions |
+| Testing | Must use real implementations | Inject mocks/fakes freely |
+| Swapping implementations | Edit the class | Change the wiring only |
+| Visibility of needs | Hidden in the body | Explicit in the constructor signature |
+| Lifecycle control | Per-instance, ad hoc | Centralized (singleton/scoped/transient) |
+
+**Key insight:** DI doesn't eliminate `new` — *something* still constructs the objects. It **moves** the `new` to a single composition root (or a container), so business-logic classes depend on abstractions and stay testable and reconfigurable.
+
+### DI containers (NestJS)
+
+For small apps, manual wiring (passing constructor args yourself) is enough. As the graph grows — service A needs B needs C needs D — wiring by hand becomes tedious. A **DI container** resolves the whole graph automatically.
+
+```ts
+// NestJS — @Injectable marks a class as available for injection
+@Injectable()
+export class UserService {
+  // Nest reads the constructor types and injects matching providers
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly mailer: MailerService,
+  ) {}
+
+  async register(email: string) {
+    const user = await this.db.insert('users', { email });
+    await this.mailer.send(email, 'Welcome!');
+    return user;
+  }
+}
+
+@Module({
+  providers: [UserService, DatabaseService, MailerService], // registered in the container
+  controllers: [UserController],
+})
+export class UserModule {}
+```
+
+**Interface-based injection via tokens** (TS interfaces don't exist at runtime, so use a token):
+
+```ts
+export const MAILER = Symbol('MAILER');
+
+@Module({
+  providers: [
+    {
+      provide: MAILER,
+      // swap SmtpMailer ↔ SesMailer ↔ FakeMailer without touching UserService
+      useClass: process.env.NODE_ENV === 'test' ? FakeMailer : SmtpMailer,
+    },
+  ],
+})
+export class AppModule {}
+
+@Injectable()
+export class UserService {
+  constructor(@Inject(MAILER) private readonly mailer: Mailer) {}
+}
+```
+
+**Provider scopes:**
+
+```ts
+@Injectable({ scope: Scope.DEFAULT })   // singleton — one instance app-wide (default)
+@Injectable({ scope: Scope.REQUEST })   // new instance per incoming request
+@Injectable({ scope: Scope.TRANSIENT }) // new instance every time it's injected
+```
+
+### When DI is overkill
+
+For a one-off script or a class with no external collaborators, plain `new` is fine — DI adds indirection for no benefit. Reach for DI (and especially a container) when you have: multiple implementations to swap, a need to unit-test in isolation, or a deep dependency graph that's painful to wire by hand.
+
+---
+
+*Last updated: 2026-06-05*
