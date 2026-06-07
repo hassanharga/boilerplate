@@ -63,6 +63,10 @@ A senior-focused reference covering API design, databases, security, caching, sc
 41. [Event Sourcing & CQRS](#41-event-sourcing--cqrs)
 42. [Deployment Strategies](#42-deployment-strategies)
 
+### Part 6: Engineering Practices
+
+43. [How Seniors Review PRs](#43-how-seniors-review-prs)
+
 ---
 
 # Part 1: Core Interview Topics
@@ -3490,6 +3494,149 @@ spec:
 | Canary | Fast (reduce %) | ~5% extra | Uninterrupted | High |
 
 **DB migrations during any zero-downtime deploy:** the new and old app version run simultaneously during the transition. Schema changes must be backward compatible — use the expand/contract pattern (see Section 37).
+
+---
+
+# Part 6: Engineering Practices
+
+---
+
+## 43. How Seniors Review PRs
+
+### Why Senior Reviews Differ
+
+Junior reviewers check if code works. Senior reviewers check if the code *should exist at all*, and whether it will cause problems six months from now.
+
+### The Two-Pass Approach
+
+**Pass 1 — Big Picture (2–5 min)**
+
+Before reading a single line, answer:
+- Does this PR solve the right problem?
+- Is the approach correct, or is there a simpler/safer alternative?
+- Is the scope right — too big, or should it be split?
+- Will this obviously break anything?
+
+If the approach is wrong, say so immediately. No point reviewing line-by-line on a flawed design.
+
+**Pass 2 — Detail Review**
+
+Work through changed files systematically. For each section ask: correctness, security, performance, tests.
+
+### What Seniors Look For
+
+**Correctness**
+- Off-by-one errors, null/nil handling, type coercions
+- Race conditions in concurrent code
+- Incorrect assumptions about external systems (e.g., "this API always returns 200")
+- Edge cases: empty input, max values, concurrent requests, large payloads
+
+**Security**
+- User-controlled input reaching SQL, shell commands, or `eval` without sanitization
+- Auth/permission checks missing or placed after expensive work
+- Sensitive data (tokens, passwords, PII) in logs or API responses
+- Overly broad permissions (public S3 bucket, `SELECT *` with no row-level filter)
+- JWT not verified — expiry unchecked, signature not validated
+
+**Performance**
+- N+1 queries: a DB call inside a loop over DB results
+- Missing indexes on new query patterns
+- Unbounded queries with no `LIMIT`
+- Heavy work in hot paths (serialization, crypto, reflection in request handlers)
+- Memory leaks: event listeners not removed, large objects held in closures, goroutines that never exit
+
+**Reliability**
+- No retry logic for network calls to external services
+- No timeout on outbound HTTP calls — can exhaust connection pool
+- Multiple writes with no transaction — partial failure leaves inconsistent state
+- Race condition between check and act (TOCTOU): `if exists → insert` without a lock
+
+**Maintainability**
+- Function doing more than one thing
+- Magic numbers without named constants
+- Deeply nested conditionals that could be flattened with early returns
+- Names that lie: `getUserData` that also sends an email
+
+**Tests**
+- Happy path only — no error paths, no edge cases
+- Tests that only verify the mock was called, not the actual behavior
+- No test for the specific bug being fixed
+- Tests tightly coupled to implementation (testing internals, not contracts)
+- Test setup so complex the test itself is hard to read
+
+### Comment Conventions
+
+Label comments by severity so authors know what to prioritize:
+
+| Label | Meaning | Must fix? |
+|-------|---------|-----------|
+| `blocker:` | Bug, security hole, data loss risk | Yes — do not merge |
+| `major:` | Design issue or significant concern | Usually yes |
+| `minor:` | Suboptimal but acceptable as-is | Author's call |
+| `nit:` | Style, naming, tiny cleanup | No, but welcome |
+| `question:` | Asking for understanding — no change implied | No change required |
+| `suggestion:` | Alternative worth considering | No obligation |
+
+```
+blocker: This query has no WHERE clause — will update every row in the table.
+
+nit: `getUsersList` → `getUsers` (the "list" suffix is redundant).
+
+question: Is there a reason we're not reusing the existing `parseDate` util here?
+
+suggestion: Could extract the retry logic into a shared helper — same pattern appears in three other places.
+```
+
+### What Makes a PR Easy to Review
+
+**PR description:** Explains WHY, not just what. Links to the ticket. Calls out known trade-offs and anything the reviewer should pay extra attention to.
+
+**Scope:** One logical change. Not a refactor mixed with a feature mixed with a bug fix.
+
+**Size:** Prefer ≤ 400 lines of meaningful change. Large PRs get rubber-stamped or block for weeks.
+
+**Self-reviewed:** Author has read their own diff. No obvious typos, debug logs, or commented-out code left in.
+
+**Tests included:** Not a separate follow-up PR. Test coverage for the changed logic.
+
+**No formatting noise:** Unrelated whitespace or import changes mixed into a feature diff make reviewing painful.
+
+### Red Flags That Warrant Extra Scrutiny
+
+- PR touches auth, payments, or data deletion
+- PR changes a shared utility used in 20+ places
+- PR has 0 test changes despite adding non-trivial logic
+- Commit message is "fix", "wip", or "misc"
+- The diff is 800+ lines with a description of "refactor"
+- Code that bypasses a safety check "just for now"
+- `// TODO` in code that is supposed to be production-ready
+
+### How to Give Constructive Feedback
+
+**Be specific about what's wrong and why:**
+```
+// Bad
+"This is wrong."
+
+// Good
+"blocker: If `user` is nil here (e.g., unauthenticated request reaches this handler),
+the next line will panic. Add a nil check and return 401."
+```
+
+**Distinguish opinion from requirement:**
+```
+// Opinion
+"nit: I'd name this `processedAt` instead of `doneAt` — more consistent with the rest of the codebase."
+
+// Requirement
+"blocker: This endpoint is missing authentication — any anonymous caller can access it."
+```
+
+**Offer a concrete alternative, don't just point out problems:**
+```
+"suggestion: Instead of fetching all users and filtering in-memory, push the filter
+to the query: `WHERE active = true`. This avoids loading potentially thousands of rows."
+```
 
 ---
 

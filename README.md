@@ -48,9 +48,11 @@ Reference documents for technical interviews:
 | File | Topics |
 |------|--------|
 | `DDD_HEXAGONAL_REFERENCE.md` | Domain-Driven Design + Hexagonal Architecture |
-| `backend-interview.md` | General backend concepts |
+| `backend-interview.md` | General backend concepts, reliability patterns, senior PR review |
 | `database-interview.md` | SQL, NoSQL, indexing, transactions |
 | `frontend-interview.md` | Browser, CSS, performance |
 | `javascript-typescript-interview.md` | JS/TS language internals |
 | `nodejs-interview.md` | Node.js runtime, event loop, streams |
 | `react-interview.md` | React patterns, hooks, rendering |
+| `system-design.md` | System design interview framework, building blocks, worked examples |
+| `golang.md` | Comprehensive Go learning reference — language, concurrency, stdlib, patterns |
