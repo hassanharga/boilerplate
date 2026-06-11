@@ -19,6 +19,8 @@ A practical guide to the non-technical interview: how to introduce yourself, ans
 11. [Salary & Notice](#11-salary--notice)
 12. [Questions to Ask Them](#12-questions-to-ask-them)
 13. [Do's and Don'ts](#13-dos-and-donts)
+14. [Where Do You See Yourself in 5 Years](#14-where-do-you-see-yourself-in-5-years)
+15. [Your Project & Experience Cheat Sheet](#15-your-project--experience-cheat-sheet)
 
 ---
 
@@ -84,11 +86,15 @@ Pick 2–3 strengths that are **relevant to the role**, and back each with a bri
 
 The goal: show **self-awareness and active improvement**, not a hidden brag ("I'm a perfectionist") and not a fatal flaw. Structure: **real weakness → its impact → concrete steps you're taking → progress so far.**
 
-**Good examples:**
+**Your real weaknesses (pick 1–2, polished into the formula):**
 
-> "I used to struggle with delegating — I'd take on too much myself because I trusted my own execution. It became a bottleneck for my team. I've worked on it deliberately: I now break work into clear tasks, hand them off with context, and resist the urge to jump in. My last project shipped faster *because* I distributed the work, and a junior dev I mentored ended up owning a whole module."
+> **Underselling my own work.** "I tend to underestimate my contributions — I'd describe what I built in modest terms that didn't reflect the actual impact, even on my CV. For example, at STC I built a full internal CI/CD tool-management system with real-time build monitoring and Slack notifications, but I'd describe it as 'just a dashboard.' I've worked on this by being deliberate about articulating impact — stating exactly what I did and the value it delivered. It's made me communicate my work much better in standups, reviews, and on paper."
 
-> "Public speaking didn't come naturally to me. Since I knew presenting designs is part of senior work, I started volunteering to lead our team demos and took a course. I'm now comfortable presenting to leadership — still something I keep practicing."
+> **Speaking in front of people.** "Presenting to a group didn't come naturally to me. Since I knew it's part of senior work, I started volunteering to walk the team through my changes and demos. I'm noticeably more comfortable now, and it's still something I keep practicing."
+
+> **Spending too long polishing.** "I sometimes take longer than needed on a task because I want to deliver it as good as possible. I've learned to balance quality with delivery — I now timebox, agree on what 'good enough' means for the iteration with my lead, ship, and refine later. It's made my estimates more predictable without sacrificing real quality."
+
+> **Aligning on requirements up front.** "Earlier I'd occasionally misread a task when it was handed to me and start before fully aligning. I fixed it by slowing down at the start — I set the context, restate my understanding back to whoever assigned it, and confirm the requirements before I begin. That's cut down rework significantly."
 
 **Avoid:**
 - Clichés that sound rehearsed: "I work too hard," "I'm a perfectionist," "I care too much."
@@ -115,9 +121,17 @@ Have 2–3 concrete, **quantified** accomplishments ready. Use STAR, and lead wi
 - **Show *your* role:** what did *you* specifically do? Avoid hiding behind "we."
 - **Pick relevance:** choose an achievement that signals the skills this role needs.
 
-> "I'm proudest of leading our observability overhaul. Our team was flying blind during incidents — mean time to resolution was over an hour. I introduced structured logging, distributed tracing, and dashboards, and ran a workshop so the team adopted them. MTTR dropped to under 15 minutes, and on-call stress measurably went down. It's the project that most changed how the team operates."
+**Your real achievements (use STAR, lead with impact):**
 
-**Categories to mine for achievements:** performance/scale wins, cost savings, delivering under a deadline, leading/mentoring, introducing a process or tool, fixing a critical production issue, launching a product/feature.
+> **Built an internal CI/CD tooling platform (STC).** "I'm proud of the tool-management system I built at STC. Developers had no central way to create and monitor builds. I built a web app that integrates with GitHub and Jira to pull branches and tasks, triggers builds through an internal CI/CD listener, streams real-time build status to a dashboard, sends Slack notifications, and uploads artifacts to S3 — plus analytics charts. I also set up the infrastructure (Route 53, EC2, ACM/Certbot for SSL). It gave the team full visibility and self-service over their builds."
+
+> **Automated a manual data-migration process.** "On one project the team was about to import data from Excel files into the database by hand. I wrote a script to parse the Excel sheets and load them directly into the database, and another to pull data from DynamoDB, normalize it to JSON, and store it in MongoDB. It removed hours of manual work and the human errors that came with it."
+
+> **Took ownership of an unowned project and cleared a long-standing backlog (Modeso).** "I inherited a maintenance-mode project with no proper handover and, while getting up to speed, fixed bugs that had been sitting in the backlog for a long time — beyond just keeping it running."
+
+> **Mentored junior developers (Modeso – Twint).** "Alongside delivery, I mentored juniors with code reviews, onboarding, and guidance on best practices, which improved both team productivity and their growth."
+
+**Categories to mine for achievements:** performance/scale wins, cost savings, automation, delivering under a deadline, leading/mentoring, introducing a process or tool, fixing a critical production issue, launching a product/feature.
 
 ---
 
@@ -131,7 +145,17 @@ Interviewers want to see how you *think under pressure* and own outcomes. Use ST
 3. **What you did** — your systematic approach: how you diagnosed, options you weighed, the decision and why.
 4. **The result** — resolution + what you learned + what you'd do to prevent it.
 
-> "During a major release, our background jobs silently stopped processing and orders piled up. The challenge was that there were no errors in the logs — it was failing silently. I reproduced it locally, traced it to an unhandled promise rejection that was killing the worker without crashing the process. I added proper error handling, a dead-letter queue, and alerting so we'd never fail silently again. We cleared the backlog within the hour, and the alerting caught two unrelated issues the following week. The big lesson for me was that *silent* failures are worse than loud ones — I now design for observable failure from the start."
+**Your real challenge (Modeso — inheriting a project with no handover):**
+
+> **Situation:** "At Modeso we had a project in maintenance mode, and the developer who owned it had to take an urgent, long leave. I took over responsibility, but there was no proper handover — and the rest of the team didn't know the project either."
+>
+> **Task:** "Right after, we got a hot-fix request for a high-priority bug that needed to be fixed ASAP, and I had no idea where to start."
+>
+> **Action:** "Instead of guessing, I talked to the team lead and set up a meeting with QA to understand the business and how the app was supposed to behave. Then I reverse-engineered the whole flow — front end to back end — until I located where the problem actually was."
+>
+> **Result:** "I shipped the fix in time, and while I was in the codebase I also discovered and resolved several bugs that had been sitting in the backlog for a long time. The lesson for me was how much a clear handover and shared business context matter — I'm now deliberate about documenting projects I own so no one is ever in that position."
+
+**A second, lighter example (automation):** "When the team was about to import Excel data into the database manually, I wrote scripts to load it automatically — and another to migrate data from DynamoDB into MongoDB — removing hours of manual work."
 
 > **Tip:** Choose a problem where *you* drove the resolution. End on the lesson learned — it shows growth and turns even a messy situation into a positive.
 
@@ -250,6 +274,49 @@ Always have 3–5 ready — "no questions" signals low interest. Good questions 
 - Bluff on things you don't know — "I haven't done X, but here's how I'd approach it / how I learn fast" is stronger.
 - Forget to research the company.
 - Undersell with excessive modesty, or oversell with arrogance — aim for confident and grounded.
+
+---
+
+## 14. Where Do You See Yourself in 5 Years
+
+They're checking ambition *and* whether you're likely to stay. Show growth that's aligned with the role — not a plan to leave.
+
+> "In five years I'd like to still be growing with your company — either in this role with broader responsibilities, or having earned a promotion. Alongside that, I want to keep deepening and diversifying my skills through courses and hands-on work so I'm genuinely strong in my area. My focus is on taking on more ownership and technical depth over time."
+
+**Do:** tie your growth to the company, show appetite for more responsibility, mention continuous learning.
+**Don't:** say "running my own company" / "your job" (sounds like you'll leave or threaten them), or "I don't know."
+
+---
+
+## 15. Your Project & Experience Cheat Sheet
+
+Interview-ready summaries of your background — use these for "tell me about yourself," "walk me through a project," and to pull quick proof points into other answers. Lead with what *you* did and the impact.
+
+### Codiles — Fullstack Developer
+- **Sijil** — web + mobile healthcare network connecting patients with clinics, labs, and imaging centers; management system for providers. **React, TypeScript, Node.js, MongoDB, DynamoDB, React Query, S3.** Integrated Google Maps; integrated a third-party drug-name API and indexed it in **Elasticsearch for faster retrieval**; real-time reservation updates via **Socket.IO**; wrote business/technical docs and Swagger API docs; built deployment pipelines with **AWS CodePipeline**.
+- **Saldwich** — restaurant ordering platform (app + dashboard) for managing branches, menus, and orders by customer location. **React, React Native, TypeScript, Node.js, MongoDB, DynamoDB, S3.** Integrated **Foodics** (menu sync) and Google Maps; real-time order updates via Socket.IO; built dashboard for coupons/vouchers.
+- **TheClinicians** — doctor Q&A mobile app with real-time updates and chat. **TypeScript, Node.js, Angular, Ionic, MongoDB, AWS EC2/S3** (image/video/audio uploads).
+- **Medlink** — paid medical-consultation app across specialities. **TypeScript, Node.js, Angular, Ionic, MongoDB, EC2/S3.**
+- **Also:** built POCs for new web/mobile projects; Docker; Jira.
+
+### VOIS (Vodafone Intelligent Solutions)
+- **Vodafone Germany** — developed, maintained, and refactored the German web app. **TypeScript, Angular, Node.js, Docker.** Built reusable components on their internal UI standards/libraries; unit testing; active in Agile ceremonies and cross-team work with QA/business.
+
+### InnovationTeam (outsourced to STC) & InnovationTeam
+- **STC Tool Management** *(signature project)* — internal CI/CD tooling web app. Integrates with **GitHub & Jira** to fetch branches/tasks; lets devs create and monitor builds via an internal CI/CD listener with **real-time build status**, **Slack notifications**, and artifact uploads to **S3**; analytics charts. **TypeScript, Angular, Node.js, MongoDB.** Infra: **AWS Route 53, EC2, ACM** + Certbot for SSL.
+- **Rateel** — app that identifies the reciter and surah of any Quran audio. Angular/React → migrated to **Flutter**. **Node.js, TypeScript, AWS EC2, S3, API Gateway, Lambda.** Also built a POC search engine for products in the MyStc app.
+- **ITBA Tourism** — eco-tourism app for North Reserve. **TypeScript, React, Next.js (App Router, SSR for SEO), Node.js.** Material UI / DaisyUI / Tailwind; Redux + Context; **dotCMS headless CMS over GraphQL**; Docker → AWS EC2 with auto-deploy pipeline; Azure DevOps; technical docs, Agile.
+- **SIRAR** — internal progress/news/events dashboard. **React, Node.js, TypeScript, MUI**, integrated with **PEGA**.
+- **Civil Affairs** — ministry dashboard for reviewing and actioning citizen requests. **React, Node.js, TypeScript, MUI**, integrated with webMethods via React Query.
+
+### Modeso
+- **Twint Super Deals** — weekly deals/offers in the TWINT app. Migrated to newer **React/Angular/Node.js** with a new project structure and state management; **Storybook** for component testing/docs. **React, Angular, TypeScript, Node.js, MongoDB, Docker, RabbitMQ.** **Mentored juniors** (code reviews, onboarding, best practices); cross-team work with QA/business; Agile.
+- **Dental Axess** — multi-tenant digital-dentistry platform. **Angular, TypeScript, Node.js, MongoDB, Docker, Keycloak** (user management). Maintenance mode — *this is the project where I inherited ownership with no handover and cleared a long-standing backlog* (see §6).
+
+### Yassir
+- Build robust, scalable services in **Node.js / Python / Go**; design (micro)services and system architecture; improve code quality via unit tests, automation, and code reviews; contribute to brainstorming on technology, algorithms, and products; translate end-user requirements into pragmatic technical solutions and deliver on schedule.
+
+> **How to use this:** for "tell me about yourself," summarize the arc (fullstack → senior, healthcare/enterprise/internal-tooling domains, JS/TS + Node + cloud). For a deep-dive, pick **STC Tool Management** or **Sijil** and tell it as a STAR story.
 
 ---
 
