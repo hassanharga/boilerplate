@@ -22,6 +22,7 @@ A senior-focused reference covering core concepts with code examples. Organized 
 17. [Object Static Methods](#17-object-static-methods)
 18. [AggregateError](#18-aggregateerror)
 19. [Intl API](#19-intl-api)
+23. [Modern ECMAScript Features (2023–2026)](#23-modern-ecmascript-features-20232026)
 
 ### Part 2: TypeScript
 
@@ -999,6 +1000,60 @@ gen.next(10); // { value: 10, done: false }
 gen.next(20); // { value: 30, done: false }
 ```
 
+**Why iterators & generators exist — what problem they solve:**
+
+They give you **lazy, on-demand sequences**: values are produced one at a time only when pulled, instead of building an entire collection in memory up front. This unlocks patterns that arrays can't express.
+
+- **Memory efficiency** — process huge or streaming data without holding it all at once (line-by-line file reads, paginated APIs). The generator computes the next value only when asked.
+- **Infinite sequences** — `naturals()`, ID generators, Fibonacci. Impossible with an array; trivial with a lazy generator.
+- **Custom iteration** — make any object work with `for...of`, spread, and destructuring by implementing `[Symbol.iterator]`. Tree/graph traversal becomes a clean `yield*` recursion.
+- **Pausable computation / coroutines** — `yield` suspends and resumes a function, enabling cooperative scheduling, state machines, and two-way data flow (the foundation Redux-Saga and early async libraries were built on).
+- **Composable pipelines** — chain lazy transforms so each item flows through the whole pipeline before the next is pulled (one pass, no intermediate arrays).
+
+```js
+// Use case 1 — lazy tree traversal without building an array
+function* walk(node) {
+  yield node.value;
+  for (const child of node.children ?? []) yield* walk(child);
+}
+const tree = { value: 1, children: [{ value: 2 }, { value: 3, children: [{ value: 4 }] }] };
+[...walk(tree)]; // [1, 2, 3, 4]
+
+// Use case 2 — unique ID generator (infinite, stateful, no globals)
+function* idGenerator(prefix = 'id') {
+  let n = 1;
+  while (true) yield `${prefix}_${n++}`;
+}
+const ids = idGenerator('user');
+ids.next().value; // 'user_1'
+ids.next().value; // 'user_2'
+
+// Use case 3 — lazy pipeline: only computes what's consumed
+function* map(iterable, fn) { for (const x of iterable) yield fn(x); }
+function* filter(iterable, fn) { for (const x of iterable) if (fn(x)) yield x; }
+function* take(iterable, n) {
+  let i = 0;
+  for (const x of iterable) { if (i++ >= n) return; yield x; }
+}
+
+// Square evens from an infinite stream, but stop after 3 — only 3 values ever computed
+const pipeline = take(map(filter(naturals(), x => x % 2 === 0), x => x ** 2), 3);
+[...pipeline]; // [4, 16, 36]
+
+// Use case 4 — chunking/batching a large iterable
+function* chunk(iterable, size) {
+  let batch = [];
+  for (const item of iterable) {
+    batch.push(item);
+    if (batch.length === size) { yield batch; batch = []; }
+  }
+  if (batch.length) yield batch;
+}
+[...chunk([1, 2, 3, 4, 5], 2)]; // [[1, 2], [3, 4], [5]]
+```
+
+> **Note:** since ES2025 you can use the built-in **iterator helpers** (`.map`, `.filter`, `.take`, `.drop`, …) directly on any iterator instead of hand-rolling these — see [Modern ECMAScript Features](#23-modern-ecmascript-features-20232026).
+
 ---
 
 ### Symbol
@@ -1350,6 +1405,41 @@ document.getElementById('list').addEventListener('click', (event) => {
   const id = item.dataset.id;
   handleItemClick(id);
 });
+```
+
+---
+
+### Script Loading: `async` vs `defer`
+
+Both attributes let the browser download a `<script>` in parallel with HTML parsing (instead of blocking the parser). The difference is **when the script executes** and **whether execution order is guaranteed**.
+
+```html
+<!-- Blocking — pauses HTML parsing to download AND execute (avoid in <head>) -->
+<script src="app.js"></script>
+
+<!-- async — downloads in parallel, executes as soon as it's ready (may interrupt parsing) -->
+<script src="analytics.js" async></script>
+
+<!-- defer — downloads in parallel, executes only after HTML is fully parsed -->
+<script src="app.js" defer></script>
+```
+
+|                | Download         | Execution timing                 | Order preserved? | DOM ready? |
+| -------------- | ---------------- | -------------------------------- | ---------------- | ---------- |
+| (none)         | Blocks parsing   | Immediately, before parse resumes | Yes              | No         |
+| `async`        | Parallel         | As soon as downloaded            | **No** (race)    | Maybe      |
+| `defer`        | Parallel         | After HTML parsed, before `DOMContentLoaded` | Yes  | Yes        |
+| `type="module"`| Parallel         | Deferred by default (like `defer`) | Yes            | Yes        |
+
+**Rule of thumb:**
+
+- **`defer`** — for scripts that touch the DOM or depend on each other (your app bundle). Execution waits for the full DOM and runs in document order.
+- **`async`** — for independent, standalone scripts that don't depend on the DOM or other scripts (analytics, ads, trackers). First to download runs first — order is not guaranteed.
+- **`type="module"`** scripts are deferred automatically; add `async` to opt into immediate execution.
+
+```js
+// 'async' scripts can fire before the DOM exists — guard DOM access:
+document.addEventListener('DOMContentLoaded', () => initWidget());
 ```
 
 ---
@@ -2728,4 +2818,154 @@ cfg.retries; // type: 3, not number
 
 ---
 
-_Last updated: 2026-06-04_
+# Part 1 (continued):
+
+---
+
+## 23. Modern ECMAScript Features (2023–2026)
+
+A roundup of recently shipped (and imminently shipping) language features beyond the ES6/ES2020 baseline. These come up in senior interviews as "what's new" questions and increasingly appear in real codebases.
+
+### Temporal — the modern date/time API (Stage 3, shipping)
+
+`Temporal` replaces the famously broken `Date` object. It is **immutable**, **timezone-aware**, and distinguishes between wall-clock time, exact instants, and durations — no more month-zero-indexing or silent mutation.
+
+```js
+// The core types, each modeling a distinct concept:
+Temporal.Now.instant();              // exact point on the global timeline (UTC)
+Temporal.Now.plainDateISO();         // calendar date with no time/zone — 2026-06-11
+Temporal.Now.zonedDateTimeISO();     // date + time + timezone, the "full" type
+
+// PlainDate — a calendar date, no time, no zone
+const date = Temporal.PlainDate.from('2026-06-11');
+date.add({ days: 21 }).toString();   // '2026-07-02' — immutable, returns a new value
+date.dayOfWeek;                       // 4 (Thursday) — 1-indexed Mon..Sun
+date.daysInMonth;                     // 30
+
+// ZonedDateTime — DST-safe arithmetic across timezones
+const meeting = Temporal.ZonedDateTime.from('2026-06-11T09:00[America/New_York]');
+meeting.withTimeZone('Asia/Tokyo').toString(); // same instant, Tokyo wall clock
+
+// Duration — first-class spans you can add/subtract and round
+const dur = Temporal.Duration.from({ hours: 25, minutes: 30 });
+dur.round({ largestUnit: 'day' }).toString(); // 'P1DT1H30M'
+
+// Comparison & differences (no more millisecond subtraction math)
+const a = Temporal.PlainDate.from('2026-01-01');
+const b = Temporal.PlainDate.from('2026-06-11');
+a.until(b, { largestUnit: 'month' }).toString(); // 'P5M10D'
+Temporal.PlainDate.compare(a, b);                // -1 (a is earlier)
+```
+
+**Why it matters:** `Date` is mutable, parses inconsistently, has no timezone support beyond the host, and 0-indexes months. `Temporal` fixes all of it with separate, explicit types. Until it ships everywhere, use the official `@js-temporal/polyfill`.
+
+### Iterator Helpers (ES2025)
+
+Lazy `.map`/`.filter`/`.take`/etc. directly on **any** iterator — array-style chaining without materializing intermediate arrays. Pairs perfectly with generators.
+
+```js
+function* naturals() { let n = 1; while (true) yield n++; }
+
+// Lazy chain on an infinite iterator — only computes what's consumed
+const result = naturals()
+  .filter((n) => n % 2 === 0)
+  .map((n) => n ** 2)
+  .take(5)
+  .toArray(); // [4, 16, 36, 64, 100]
+
+// Other helpers: .drop(n), .flatMap(fn), .reduce(fn), .some(fn), .every(fn), .find(fn), .forEach(fn)
+Iterator.from([1, 2, 3, 4]).drop(1).toArray(); // [2, 3, 4]
+```
+
+### Set Methods (ES2025)
+
+Native set algebra — no more manual `filter`/`has` loops.
+
+```js
+const a = new Set([1, 2, 3, 4]);
+const b = new Set([3, 4, 5, 6]);
+
+a.union(b);                // Set {1, 2, 3, 4, 5, 6}
+a.intersection(b);         // Set {3, 4}
+a.difference(b);           // Set {1, 2}
+a.symmetricDifference(b);  // Set {1, 2, 5, 6}
+a.isSubsetOf(b);           // false
+a.isDisjointFrom(b);       // false
+```
+
+### `Object.groupBy` / `Map.groupBy` (ES2024)
+
+Group a collection by a key function in one call.
+
+```js
+const items = [
+  { type: 'fruit', name: 'apple' },
+  { type: 'veg', name: 'carrot' },
+  { type: 'fruit', name: 'pear' },
+];
+
+// Object.groupBy — string/symbol keys, returns a null-prototype object
+Object.groupBy(items, (item) => item.type);
+// { fruit: [{...apple}, {...pear}], veg: [{...carrot}] }
+
+// Map.groupBy — keys can be any value (objects, numbers), returns a Map
+Map.groupBy([1, 2, 3, 4, 5], (n) => (n % 2 ? 'odd' : 'even'));
+// Map { 'odd' => [1, 3, 5], 'even' => [2, 4] }
+```
+
+### `Promise.withResolvers` (ES2024)
+
+Get a promise plus its `resolve`/`reject` functions without the executor-closure dance.
+
+```js
+// Before — capture resolvers from inside the executor
+let resolve, reject;
+const p = new Promise((res, rej) => { resolve = res; reject = rej; });
+
+// After — destructure them directly
+const { promise, resolve, reject } = Promise.withResolvers();
+// Useful for event-driven code: resolve when an external event fires
+socket.on('ack', resolve);
+socket.on('error', reject);
+await promise;
+```
+
+### `Array.fromAsync` (ES2024)
+
+Build an array from an **async** iterable (or a sync iterable of promises) — the async counterpart to `Array.from`.
+
+```js
+async function* pages() { yield 1; yield 2; yield 3; }
+await Array.fromAsync(pages()); // [1, 2, 3]
+
+// Awaits each promise in sequence
+await Array.fromAsync([Promise.resolve('a'), Promise.resolve('b')]); // ['a', 'b']
+```
+
+### Other recent additions
+
+```js
+// RegExp.escape (ES2026) — safely embed user input in a RegExp
+const safe = RegExp.escape('a.b*c');           // 'a\\.b\\*c'
+new RegExp(RegExp.escape(userInput));          // no injection / accidental metacharacters
+
+// Error.isError (ES2026) — reliable across realms/iframes (unlike instanceof Error)
+Error.isError(new TypeError('x')); // true
+
+// String.prototype.isWellFormed / toWellFormed (ES2024) — detect/fix lone surrogates
+'\uD800'.isWellFormed();   // false (lone surrogate)
+'\uD800'.toWellFormed();   // '�' (replacement char) — safe for encodeURI, etc.
+
+// Array grouping immutability already covered: toSorted / toReversed / with (ES2023)
+
+// Hashbang grammar (ES2023) — #!/usr/bin/env node as the first line is now spec'd
+// 'using' / 'await using' for explicit resource management (ES2025) — see section 21
+// Duplicate named capture groups in different RegExp alternatives (ES2025)
+const re = /(?<year>\d{4})-\d{2}|\d{2}-(?<year>\d{4})/; // same name, separate branches — now legal
+```
+
+**How to talk about feature stages in an interview:** TC39 proposals advance through Stage 0→4. **Stage 3** means "spec-complete, implementations encouraged" (ship behind a polyfill — e.g. Temporal). **Stage 4** means "finished, in the next yearly spec" (e.g. iterator helpers, set methods). The yearly editions (ES2023, ES2024, ES2025…) snapshot whatever reached Stage 4 that cycle.
+
+---
+
+_Last updated: 2026-06-11_
