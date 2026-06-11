@@ -157,7 +157,19 @@ Interviewers want to see how you *think under pressure* and own outcomes. Use ST
 
 **A second, lighter example (automation):** "When the team was about to import Excel data into the database manually, I wrote scripts to load it automatically — and another to migrate data from DynamoDB into MongoDB — removing hours of manual work."
 
-> **Tip:** Choose a problem where *you* drove the resolution. End on the lesson learned — it shows growth and turns even a messy situation into a positive.
+### Your flagship production-incident story (Yassir — LTS outage)
+
+Use this one for "tell me about a high-pressure production issue," "a time you owned an incident," or to anchor a scalability/system-design discussion. It's senior-level: real users, real money, multiple root causes, and *your* concrete fixes.
+
+> **Situation:** "At Yassir I own LTS, the Location Tracking Service — the microservice that tracks drivers' and couriers' real-time locations and feeds dispatching across our mobility apps. During a spike in traffic, its pods started crashing into a CrashLoopBackOff and the service degraded: location requests timed out, drivers were being logged out when they went online, and dispatching was at risk. About a 75-minute outage affecting everyone relying on location tracking."
+>
+> **Task:** "As the service owner I led the post-mortem and the remediation — both stop the bleeding during the incident and make sure it couldn't recur."
+>
+> **Action:** "There were two layers. The immediate cause was our Kubernetes **liveness** probe killing pods on a hard-coded memory threshold — but a pod using memory under load isn't dead, it's busy. We moved memory checks to the **readiness** probe, made the limits configurable via environment variables instead of hard-coded, and tuned the startup/liveness timing. Underneath was a deeper issue — Redis Stack latency spikes from an internal bottleneck. My part of the fix: I made our **GCP Pub/Sub** location consumer process updates **in order and skip stale messages**, so we stopped reprocessing old and duplicate locations; I trimmed the Redis side — added **sortable indices**, stripped unneeded fields from the radius/polygon responses, and removed unused geo-path keys to cut filtration time; and I built a **MongoDB adapter as an alternative data store that we can switch on and off live via a feature flag**, so we're no longer single-pointed on Redis. We also added a circuit breaker on the backend↔LTS integration and upgraded Redis from 7.6 to 8.2 on the vendor's recommendation."
+>
+> **Result:** "The service stabilized, and we came out of it with real-time feature-flag kill-switches to mitigate spikes instantly, a fallback datastore path, and much healthier probe and observability hygiene. The lessons that stuck with me: memory belongs in *readiness*, not *liveness*; hard-coded thresholds don't survive real load; message processing has to be order-aware and idempotent; and any critical path needs a fallback you can flip on in seconds."
+
+> **Tip:** Choose a problem where *you* drove the resolution. Use "we" for team actions and "I" for your specific contributions. End on the lesson learned — it shows growth and turns even a messy situation into a positive.
 
 ---
 
@@ -315,6 +327,7 @@ Interview-ready summaries of your background — use these for "tell me about yo
 
 ### Yassir
 - Build robust, scalable services in **Node.js / Python / Go**; design (micro)services and system architecture; improve code quality via unit tests, automation, and code reviews; contribute to brainstorming on technology, algorithms, and products; translate end-user requirements into pragmatic technical solutions and deliver on schedule.
+- **LTS (Location Tracking Service)** — own the microservice tracking real-time driver/courier locations for dispatching. **NestJS, Node.js, TypeScript, Redis Stack, MongoDB, GCP Pub/Sub, Kubernetes.** Led a major outage post-mortem and remediation: fixed liveness/readiness probe and memory-config issues, made Pub/Sub consumption ordered + stale-skipping, optimized Redis indices/payloads, and built a feature-flag-toggled MongoDB fallback adapter (see the flagship story in §6).
 
 > **How to use this:** for "tell me about yourself," summarize the arc (fullstack → senior, healthcare/enterprise/internal-tooling domains, JS/TS + Node + cloud). For a deep-dive, pick **STC Tool Management** or **Sijil** and tell it as a STAR story.
 
