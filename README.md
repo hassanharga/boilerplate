@@ -54,5 +54,6 @@ Reference documents for technical interviews:
 | `javascript-typescript-interview.md` | JS/TS language internals |
 | `nodejs-interview.md` | Node.js runtime, event loop, streams |
 | `react-interview.md` | React patterns, hooks, rendering |
+| `angular-interview.md` | Angular standalone, signals, control flow, Signal Forms, zoneless, SSR — through v22 |
 | `system-design.md` | System design interview framework, building blocks, worked examples |
 | `golang.md` | Comprehensive Go learning reference — language, concurrency, stdlib, patterns |
