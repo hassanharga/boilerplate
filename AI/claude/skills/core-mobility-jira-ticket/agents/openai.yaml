@@ -1,0 +1,7 @@
+interface:
+  display_name: "Core Mobility Jira Ticket"
+  short_description: "Create CMB tickets with Core squad conventions"
+  default_prompt: "Use $core-mobility-jira-ticket to create a Core Mobility Jira ticket from this request."
+
+policy:
+  allow_implicit_invocation: true
