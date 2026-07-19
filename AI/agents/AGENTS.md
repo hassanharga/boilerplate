@@ -2,6 +2,33 @@
 
 Violating any of these can cause real damage: lost data, broken trust, shipped-broken work. Always follow.
 
+## Workflow Constraints
+
+Never run `pnpm install` or `npm install` or read/explore `node_modules`. Use existing installed dependencies only. Never run binaries from `node_modules/.bin` directly — always invoke them via the package manager (e.g. `pnpm exec <binary>`, `pnpm run <script>`, or `npx <binary>`).
+
+## Testing / Verification
+
+Before declaring work complete, always run the full verification chain: typecheck, lint, build, and tests — and report pass/fail explicitly.
+
+## Test Scope - run only changed files by default
+
+Whenever you run tests — in the main agent OR in any subagent — run them **only against the files you changed (and their directly affected tests)**, never the whole suite, UNLESS the user explicitly asks for a full-suite run.
+
+Why: a full-suite run forks many workers; several agents doing it at once can exhaust RAM and freeze the machine.
+
+- Default: `<test-runner> <path-or-pattern-of-changed-specs>` (e.g. `pnpm test <changed-file-substring>`).
+- Subagents inherit this rule. When dispatching a subagent that runs tests, tell it to scope to its changed files.
+- Run the full suite ONLY when the user explicitly requests it, and prefer doing it once, serially, in a single agent — not in parallel across subagents.
+- If you believe a full-suite run is warranted (e.g. a cross-cutting change), ask first; don't run it unprompted.
+
+## Code Review
+
+When validating code-review comments, verify each claim against the actual code before implementing; explicitly justify any comment left unaddressed.
+
+## Communication / Response Style
+
+Answer direct feasibility/yes-no questions first, then explore; do not launch into investigation before responding to the explicit question.
+
 ## Ask Before Destructive Commands
 
 Never run irreversible or shared-state-changing commands without explicit permission. State the exact command, why you want to run it, and wait for an OK.
