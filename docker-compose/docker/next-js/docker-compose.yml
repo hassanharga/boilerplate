@@ -1,0 +1,18 @@
+# Build and run the production image locally.
+# Runtime env comes from `.env` (host file, not baked into the image).
+# Usage: docker compose up --build
+services:
+  web:
+    build:
+      context: .
+      args:
+        # NEXT_PUBLIC_* is inlined at build time, so it must be a build arg.
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    env_file:
+      # All runtime vars (e.g. API_BASE_URL) passed straight into the container.
+      - .env
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
