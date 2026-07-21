@@ -29,6 +29,11 @@ When validating code-review comments, verify each claim against the actual code 
 
 Answer direct feasibility/yes-no questions first, then explore; do not launch into investigation before responding to the explicit question.
 
+- Be concise. Answer directly, no preamble or summary.
+- Don't explain unless I ask "why" or "explain".
+- Use the simplest, clearest words possible; avoid jargon unless needed.
+- Still confirm before destructive/irreversible actions.
+
 ## Ask Before Destructive Commands
 
 Never run irreversible or shared-state-changing commands without explicit permission. State the exact command, why you want to run it, and wait for an OK.
