@@ -34,6 +34,10 @@ Answer direct feasibility/yes-no questions first, then explore; do not launch in
 - Use the simplest, clearest words possible; avoid jargon unless needed.
 - Still confirm before destructive/irreversible actions.
 
+## PR Approvals
+
+Never submit a PR approval (`gh pr review --approve`) until the user explicitly says to approve. Review the PR, present findings, and wait for the user's go-ahead before submitting the approval.
+
 ## Ask Before Destructive Commands
 
 Never run irreversible or shared-state-changing commands without explicit permission. State the exact command, why you want to run it, and wait for an OK.
