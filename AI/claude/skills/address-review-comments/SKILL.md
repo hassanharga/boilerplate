@@ -31,10 +31,19 @@ already does. Equally bad is the reverse: hand-waving a real bug away as "won't
 fix" to save effort. Both erode trust. Verify against the actual code, then act
 on what you find, and make your reasoning legible.
 
-## The core loop
+## Two phases: fix-first, test-last
 
-For **each** comment, run the same five moves. Never batch-implement before you've
-verified — a wrong fix applied confidently is worse than no fix.
+Process the comments in **two distinct phases**. This gives better accuracy — you
+stay focused on one comment at a time during the fix phase, and you catch
+cross-comment interactions when you test everything together at the end.
+
+### Phase 1 — Triage and fix, one comment at a time
+
+Work through comments **strictly sequentially**. Fully resolve one comment —
+understand, verify, decide, and (if valid) make the fix — **before** moving to the
+next. Do **not** write or run any tests in this phase; that comes in Phase 2.
+
+For **each** comment, run these four moves:
 
 1. **Understand** — restate the comment in your own words. If you genuinely can't
    tell what it's asking, mark it `needs clarification` and move on; don't guess.
@@ -47,15 +56,20 @@ verified — a wrong fix applied confidently is worse than no fix.
    is wrong or it's a non-issue — say precisely why), `already-handled` (code or
    a test already covers it), `out-of-scope` (real but belongs in separate work),
    or `needs clarification`.
-4. **Act** — for `valid`, make the smallest change that resolves the comment. Fix
-   one comment at a time; don't let an unrelated cleanup ride along. If two
-   comments touch the same code, resolve them together and note it.
-5. **Prove it** — add or extend tests so that **100% of the lines your fix
-   touches** are exercised (see [Testing rules](#testing-rules)). Run the tests
-   for the changed files and confirm they pass before calling the comment done.
+4. **Act** — for `valid`, make the smallest change that resolves the comment.
+   Complete the fix before reading the next comment. Don't let an unrelated
+   cleanup ride along. If two comments touch the same code, resolve them together
+   and note it.
 
 Work valid comments in a sensible order: blocking/correctness/security first, then
-trivial fixes (typos, imports), then larger refactors. Test each before the next.
+trivial fixes (typos, imports), then larger refactors.
+
+### Phase 2 — Test all fixes together
+
+After **every** comment has been triaged and acted on, write tests covering **100%
+of the lines your fixes touched** (see [Testing rules](#testing-rules)). Run all
+affected tests in one batch and confirm they pass. This catches regressions where
+one fix breaks another's assumptions — something per-comment testing can miss.
 
 ## Discovering the comments and the code
 
@@ -89,10 +103,10 @@ Tests are how you _prove_ a fix is real rather than asserting it. The target is
 whole file and not the whole project. You are not on the hook for pre-existing
 untested code near your fix; you are on the hook for every line you write.
 
-- **Write the failing test first when you can.** For a bug fix, a test that
-  reproduces the bug (red) then passes after the fix (green) is the strongest
-  proof the comment was real and is now resolved. For a behavior change, assert
-  the new behavior directly — not that a mock was called.
+- **Write tests that assert the correct behavior.** Since all fixes are already
+  applied by the time you reach Phase 2, write tests that directly assert the
+  expected behavior of each fix — not that a mock was called. For a bug fix,
+  assert the input that was broken now returns the correct result.
 - **Match the project's test conventions.** Find a neighboring test file, use the
   same runner, structure, and naming. Don't introduce a new framework.
 - **Run only the affected tests**, not the whole suite (a full run can exhaust
@@ -158,6 +172,9 @@ the user's explicit OK before posting, per the rule on outward-facing actions.
 - **Skepticism cuts both ways.** Don't rubber-stamp comments (implement blindly)
   and don't rubber-stamp the code (dismiss real bugs). Each verdict is earned by
   reading the code.
+- **One at a time.** Give each comment your full attention — understand, verify,
+  decide, fix, then move on. Jumping ahead dilutes accuracy and risks fixing
+  against stale context.
 - **Smallest change that resolves the comment.** Don't gold-plate a fix or refactor
   adjacent code the comment didn't mention.
 - **Surface disagreement plainly.** If you think a comment is wrong, say so with
