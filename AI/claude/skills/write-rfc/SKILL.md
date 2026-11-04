@@ -15,77 +15,92 @@ description: >-
 
 # Write an RFC
 
-An RFC turns a design decision into something a team can review, argue with, and
-approve. The value is not the prose — it's forcing the author to state the
-problem crisply, show the alternatives they considered, and be honest about
-tradeoffs. A good RFC makes disagreement productive: a reader can see exactly
-what is being proposed and where they'd push back.
+Turn a design decision into something a team can review, argue with, and approve. The
+value is not the prose — it is forcing the problem to be stated crisply, the alternatives
+to be shown, and the tradeoffs to be admitted. A good RFC makes disagreement productive:
+a reader can see exactly what is proposed and where they would push back.
 
-Your job: produce a clear, honest, appropriately-scoped RFC, then help the
-author put it where their team will read it.
+## Scope boundary
 
-## Workflow
+- Product requirements, user outcomes, and release scope belong in a PRD — use
+  `write-full-prd`.
+- Interface layout, tokens, states, and accessibility belong in a design brief — use
+  `ui-ux-brief`.
+- When an accepted RFC changes a Yassir Mobility service's architecture, its Design
+  Guide is now stale. Say so in the handoff and use `service-design-guide` to reconcile
+  it. Nothing else connects those two documents.
 
-1. **Decide draft-now vs. interview.** Look at what the user gave you.
-   - **Enough to draft** (a description with a real problem + a proposed
-     direction, a linked ticket, a code area, a prior discussion): draft
-     immediately. Fill genuine gaps with clearly-marked `> **Open question:**`
-     callouts or `_TODO(author): …_` placeholders rather than inventing facts.
-   - **Too thin** (one vague line, "write an RFC for caching"): ask a short,
-     targeted batch of questions first — see _Interviewing_ below. Don't
-     interrogate; 3-5 sharp questions beat a long form.
-   - When unsure, draft from what you have and list what you assumed at the top
-     under "Open questions". A concrete draft the author can correct is more
-     useful than a blank interview.
+## Decide whether to draft or interview
 
-2. **Read the template.** Read `references/template.md` for the section-by-section
-   structure and what "good" looks like in each section. Follow that structure.
+Draft immediately when the input contains a real problem and a proposed direction, a
+linked ticket, a code area, or a prior discussion. Fill genuine gaps with
+`> **Open question:**` callouts or `_TODO(author): …_` placeholders rather than inventing
+facts.
 
-3. **Write the draft.** Match the codebase/domain: use real component names,
-   real constraints, real numbers where you have them. Keep it as short as the
-   decision allows — length is not quality. Cut sections that genuinely don't
-   apply (say so rather than padding).
+Interview first only when the input is too thin to draft from — a single vague line with
+no direction. Ask 3–5 sharp questions in one batch, covering only what cannot be
+inferred: what is broken today and who feels it, the rough direction in mind, fixed
+constraints, approaches already ruled in or out, and what is explicitly out of scope.
 
-4. **Publish where the author wants.** After the draft is ready, **always ask
-   where to put it** — the author decides per RFC. Offer: local Markdown file,
-   Notion page, Confluence page (or "just leave it here for now"). Then follow
-   `references/publishing.md` for the chosen destination.
+When uncertain, draft from what is available and list the assumptions at the top under
+Open questions. A concrete draft the author can correct is worth more than a blank
+interview.
 
-## Interviewing (only when input is too thin)
+## Research the alternatives
 
-Ask about the things you cannot invent. Batch them; don't drip one at a time.
+Read `references/template.md` for the section contract before writing.
 
-- **Problem:** What's broken or missing today? Who feels the pain, how often?
-- **Proposal:** What's the rough direction you have in mind (if any)?
-- **Constraints:** Deadlines, systems that must not change, team size, budget.
-- **Alternatives:** Are there approaches you've already ruled in or out, and why?
-- **Scope:** What's explicitly _not_ in scope?
+Alternatives are the section that decays first when an RFC is rushed, and the section
+reviewers rely on most. Establish each rejected option well enough to state honestly why
+it lost.
 
-If the user answers some but not all, proceed with what you have and mark the
-rest as open questions in the draft.
+When the runtime supports subagents and the work splits into independent read-only
+passes, delegate. Give each subagent a disjoint scope and the same evidence standard, and
+require it to return findings with sources — never decisions, conclusions, or writes.
+Reconciliation, conflict resolution, the final document, and every external write stay in
+the main agent. If subagents are unavailable or a pass fails, run the same passes
+sequentially without reducing coverage.
 
-## Principles that make RFCs good
+Here that means one pass per candidate approach or prior-art question. Each returns
+sourced findings and constraints. Choosing the proposal, weighing the tradeoffs, and
+writing the document stay with the main agent.
 
-- **State the problem before the solution.** If a reader can't articulate the
-  problem after the Motivation section, the RFC has failed regardless of how
-  elegant the design is.
-- **Alternatives are mandatory and must be real.** "We could do nothing" and one
-  seriously-considered other approach, each with why it lost. An RFC with no
-  credible alternatives reads as a decision already made — reviewers can't
-  contribute.
-- **Be honest about tradeoffs and risks.** The costs, the things that could go
-  wrong, the parts you're unsure about. Hiding these destroys trust and they
-  surface in review anyway.
-- **Goals AND non-goals.** Non-goals prevent scope-creep arguments during review.
-- **Write for the reviewer, not yourself.** Assume a competent teammate who
-  doesn't have the context in your head. Define domain terms the first time.
-- **Match scope to stakes.** A small decision gets a short RFC. Don't inflate a
-  one-page decision into ten pages of ceremony.
+## Write the draft
+
+Use the codebase's real component names, real constraints, and real numbers where they
+exist. Keep it as short as the decision allows — length is not quality. Cut sections that
+genuinely do not apply and say so in one line rather than padding.
+
+Hold to these:
+
+- **State the problem before the solution.** If a reader cannot articulate the problem
+  after the Motivation section, the RFC has failed regardless of how elegant the design
+  is.
+- **Alternatives must be real.** Status quo plus at least one seriously considered
+  approach, each with why it lost. An RFC with no credible alternatives reads as a
+  decision already made, and reviewers cannot contribute to it.
+- **Admit the tradeoffs and risks.** Costs, failure modes, and the parts still uncertain.
+  Hiding them destroys trust and they surface in review anyway.
+- **State non-goals.** They stop review sprawling into unrelated territory.
+- **Write for the reviewer.** Assume a competent teammate without the context in your
+  head. Define domain terms on first use.
+- **Match scope to stakes.** A small decision gets a short RFC.
+- **Respect the reader's time.** The audience is a busy human who skims first. If they
+  cannot find the decision and the tradeoffs quickly, extra thoroughness makes the RFC
+  worse, not better. Do not inflate a document for the benefit of an AI reviewer.
+
+Never invent a benchmark, an approval, a reviewer, a commitment, or a constraint.
 
 ## Output format
 
-Produce clean GitHub-flavored Markdown that renders correctly both in a `.md`
-file and when converted to Notion/Confluence. Use `##` for top-level sections
-(the title is `#`), tables for comparisons, and fenced code blocks for schemas,
-APIs, or diagrams. Keep a metadata block at the top (author, status, date,
-reviewers) — see the template.
+Produce clean GitHub-flavored Markdown that renders correctly as a `.md` file and when
+converted to Notion or Confluence. Use `#` for the title and `##` for sections, tables for
+comparisons, and fenced code blocks for schemas, APIs, and diagrams. Keep the metadata
+block at the top — see the template.
+
+## Publish
+
+The author chooses the destination for every RFC. Ask where it should go — local Markdown
+file, Notion page, Confluence page, or left in chat — then follow
+`references/publishing.md`. Never publish to a shared destination without confirming;
+it is visible to others.

@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Debug Error'
+  short_description: 'Diagnose bugs before writing a minimal fix'
+  default_prompt: 'Use $debug-error to diagnose this bug before proposing a fix.'

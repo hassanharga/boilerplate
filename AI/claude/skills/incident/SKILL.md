@@ -1,83 +1,132 @@
 ---
 name: incident
-description: Use when responding to, declaring, or running a live production incident at Yassir Mobility — an outage, degradation, mass failure, payment/OTP/trip breakage, or a Datadog alert or Ops/Support report that needs triage. Also use when classifying severity (P0/P1/P2/P3), acting as or supporting an Incident Commander, drafting the incident Slack announcement, tracking the timeline, confirming recovery, or producing the Yassir post-mortem with Jira action-item tracking. Triggers include "we have an outage", "declare an incident", "is this a P0", "drivers can't go online", "spin up the incident channel", "run the incident", "write the post-mortem for CMB". For the generic craft of writing a blameless postmortem document, this skill hands off to the postmortem skill. Not for project retrospectives unrelated to an incident or generic meeting notes.
+description: Use when triaging, declaring, coordinating, communicating, or resolving a live Yassir Mobility production incident; classifying live P0/P1 impact; supporting a human Incident Commander; applying Yassir postmortem/Jira follow-up rules; or handling incident-related hotfix and supply-chain/security workflows. Do not use for ordinary P2/P3 backlog work or non-incident retrospectives.
 ---
 
 # Yassir Mobility Incident Response
 
-The single most important goal: **fix fast, communicate clearly, learn once — so we don't repeat the same incident twice.** This is a **blameless, action-oriented** process. Fix first, analyse later. Over-communicate. Speed + structure beats heroics.
+Reduce customer and business impact quickly while keeping command, communication,
+evidence, and recovery decisions clear. The agent supports a human Incident Commander
+(IC); it does not become the accountable IC.
 
-This skill covers the Yassir-specific lifecycle and the concrete artefacts. For the _craft_ of writing the postmortem document (blameless narrative, root-cause depth, action items that get done), this skill **hands off to the `postmortem` skill** — this skill only adds the Yassir-specific requirements on top.
+## Authority and safety
 
-Concrete links, channel IDs, Slack templates, the Notion post-mortem template, and Jira tracking rules live in `references/yassir-specifics.md` — read it before you post anything to a channel or file a ticket.
+- Start with read-only triage, drafts, and coordination. Incident urgency does not
+  authorize Slack/Notion/Jira writes, deployments, rollbacks, production queries,
+  feature-flag changes, credential rotation, or any other shared-state action.
+- Perform an external or production action only when the user explicitly authorizes
+  that exact scope and the repository or operational policy permits it. State the
+  intended action, risk, rollback/stop condition, and verification before execution.
+- Never invent impact, root cause, an ETA, recovery, or an owner. Mark unknowns and
+  state the evidence needed to resolve them.
+- Mitigate impact before deep causal analysis, while preserving useful evidence and
+  maintaining an append-only decision/timeline record.
+- Treat credentials, personal data, security indicators, and customer details as
+  sensitive. Minimize and redact them in incident communications.
 
-## The five stages
+## Start or classify
 
-1. **Monitoring & Alerting** — Datadog is the single source of truth (metrics, logs, traces, alerts, dashboards).
-2. **Identification & Severity** — assess _impact_, not root cause, and assign a severity.
-3. **Active Response** — an Incident Commander runs the incident; comms flow through the incident channel + status channel.
-4. **Resolution & Recovery** — deploy the fix, confirm systems healthy, announce resolution.
-5. **Post-Mortem & Follow-Up** — same-day (max 48h) blameless doc; action items tracked to closure in Jira.
+Read [yassir-policy.md](references/yassir-policy.md) for current Yassir severity,
+channels, ownership, and postmortem requirements. Re-fetch the canonical Notion policy
+before any external write when a connector is available; the reference is a verified
+cache, not permanent authority.
 
-## When something becomes an incident, and how severe
+Establish these facts before asserting severity when possible:
 
-```dot
-digraph sev {
-    rankdir=TB;
-    trig [shape=diamond label="Alert fired OR reported by Ops/Support/Product/Business?"];
-    core [shape=diamond label="Core business function down / near-down?"];
-    deg  [shape=diamond label="Significant degradation, high user/revenue impact,\nno total outage?"];
-    p0 [shape=box label="P0 — Critical: immediate response,\ndedicated focus, org-wide visibility"];
-    p1 [shape=box label="P1 — Major: immediate response,\nprioritized over all work, active comms"];
-    p23 [shape=box label="P2 / P3 — not an incident:\nworkaround exists, no immediate business risk\n→ normal sprint planning"];
-    trig -> core [label="yes"];
-    trig -> p23 [label="no"];
-    core -> p0 [label="yes"];
-    core -> deg [label="no"];
-    deg -> p1 [label="yes"];
-    deg -> p23 [label="no"];
-}
-```
+- affected core flow and whether it is unavailable or degraded;
+- affected countries/cities, user cohorts, requests, and duration;
+- failure rate, latency, backlog, data-integrity, safety, privacy, and revenue impact;
+- workaround quality and whether impact is continuing;
+- first impact, detection, and declaration timestamps with timezone.
 
-**Assess impact first, not root cause.** Severity examples (Mobility/Delivery context) and the full definitions are in `references/yassir-specifics.md`. Only **P0** and **P1** trigger this incident process; P2/P3 go through normal sprint work.
+Use impact, not suspected root cause. A provisional severity is acceptable when time is
+critical; name the missing facts and reassess whenever impact changes.
 
-## What Claude does at each stage
+- **P0:** declare immediately for complete or near-complete loss of a core business
+  function or similarly severe live impact.
+- **P1:** declare immediately for significant degradation with high user or revenue
+  impact but not total loss.
+- **P2/P3:** do not start the major-incident process; route through normal team work.
 
-- **Triage / classify:** given the symptoms, propose a severity with a one-line justification tied to impact (who/what is affected, how much). Flag if it's P2/P3 and doesn't need the incident process.
-- **Declare (P0/P1):** draft the incident-channel name (`#incident-<date>-<scope>`) and the status-channel announcement using the template in the reference file. Never post automatically — produce the text for a human to send.
-- **Run support (IC is human):** the Incident Commander runs the incident and is _not_ the main debugger. Claude helps by maintaining the live timeline (timestamped decisions/events), drafting short factual status updates, and tracking assigned tasks. Keep all substance in the incident channel — no side threads.
-- **Resolution:** confirm the resolution criteria are met (fix deployed, systems confirmed healthy via monitoring, impact gone) before drafting the resolution announcement.
-- **Post-mortem:** produce the doc (see below).
+Incident severity is not the same as Jira defect priority. A ticket labeled P1 does not
+by itself prove a live P1 incident.
 
-## Post-mortem (Stage 5) — Yassir requirements
+## Run a P0/P1 response
 
-**Hand off to the `postmortem` skill for the doc-writing craft**, then enforce these Yassir specifics on top:
+1. **Name one human IC.** If nobody is assigned, ask for one and identify the temporary
+   human coordinator. Do not allow the sole resolver to remain overloaded without
+   explicitly seeking help.
+2. **Scale roles to the incident.** Assign Operations/Resolver, Communications, and
+   Scribe/Timeline ownership when people are available. One person may hold multiple
+   roles for a small incident, but every responsibility must have a named owner.
+3. **Create the shared state.** Use the contract in
+   [live-response.md](references/live-response.md): impact, severity, roles, evidence,
+   hypotheses, actions, decisions, next update, and recovery criteria.
+4. **Work in short mitigation loops.** Observe, propose the safest reversible action,
+   name risk and rollback, obtain required authorization, execute through an authorized
+   human or capability, then verify customer and system signals. Record the result.
+5. **Communicate on a clock.** Draft factual updates using `live-response.md`. Give a
+   next-update time even when there is no conclusion. ETA means expected recovery time;
+   never substitute the update cadence for an ETA.
+6. **Reassess severity and scope.** Upgrade, downgrade, split workstreams, or bring in
+   additional service owners as evidence changes. Keep decisions in the incident channel
+   even when responders investigate elsewhere.
 
-- **Timing:** create the doc the **same day, max within 48 hours** — fresh context is critical.
-- **Canonical template:** the Yassir Notion post-mortem template (linked in the reference file). Produce Markdown locally first; publish to Notion under that template only when asked.
-- **Required sections (all must be present):** 1) Incident summary, 2) Severity & impact, 3) Timeline (detection → resolution), 4) What went well, 5) What didn't go well, 6) Root causes (technical _and_ process), 7) Action items. The generic postmortem template is a superset — keep these seven, blameless throughout.
-- **Action items:** each has an **owner** and a **Jira ticket with component = `Postmortem`** on the CMB Postmortem board. Prefer system changes over "be more careful."
-- **Closure:** the post-mortem is **done only when all action items are completed** — reviewed at the domain-wide incident meeting.
+For a production code/config change or security/supply-chain event, also read
+[special-cases.md](references/special-cases.md) before proposing the action plan.
 
-## Quick reference
+## Collect evidence
 
-| Need                                          | Where                                              |
-| --------------------------------------------- | -------------------------------------------------- |
-| Observability / source of truth               | Datadog                                            |
-| Severity definitions + Mobility examples      | `references/yassir-specifics.md`                   |
-| Incident channel naming                       | `#incident-<date>-<scope>`                         |
-| Status/announcement channel + Slack templates | `references/yassir-specifics.md`                   |
-| Who is IC (default order)                     | EM of scope → Tech Lead → any senior engineer      |
-| Post-mortem template + Jira board             | `references/yassir-specifics.md`                   |
-| Writing the postmortem doc (craft)            | `postmortem` skill                                 |
-| Hotfix / Security / Runbooks / Fire Drill     | Appendix links in `references/yassir-specifics.md` |
+Datadog is the policy-defined primary observability source. Use the Datadog skills and
+tools available in the current runtime — `datadog/logs`, `datadog/traces`,
+`datadog/metrics`, and `datadog/visualizations` — as the default evidence path, and load
+the relevant one before querying rather than guessing at query syntax mid-incident. GCP
+is the documented secondary source. Fall back to whatever observability capability the
+runtime exposes, and say which source a number came from.
 
-## Common mistakes
+Reading telemetry is read-only and needs no additional authorization. Running a query
+against a production database is not telemetry; it is a production action.
 
-- **Chasing root cause before assessing impact.** Severity and comms come first; diagnosis comes after.
-- **Silence.** "We're investigating" beats no update. Notify stakeholders early via the status channel.
-- **Auto-posting.** Claude drafts announcements; a human sends them. Don't post to Slack/Notion/Jira without being asked.
-- **Blame.** Write about systems and decisions, not individuals. Name roles ("the on-call engineer"), not fault.
-- **Treating a P2/P3 as an incident** (or a real P0 as routine). Anchor severity to actual business impact.
-- **Dropping post-mortem sections.** Keep all seven; mark genuine unknowns as unknowns rather than inventing them.
-- **Untracked action items.** No owner or no Jira ticket (component = `Postmortem`) means it won't get done.
+When the runtime supports subagents and the work splits into independent read-only
+passes, delegate. Give each subagent a disjoint scope and the same evidence standard,
+and require it to return findings with sources — never decisions, conclusions, or
+writes. Reconciliation, conflict resolution, the final incident record, and every
+external write stay in the main agent. If subagents are unavailable or a pass fails, run
+the same passes sequentially without reducing coverage.
+
+Here that means parallel evidence streams while you keep working the mitigation: error
+rates and logs, deployment and configuration history, customer and business signals, and
+downstream or dependency health. Each returns timestamped findings with links. This is
+where delegation pays for itself — serial evidence gathering is the slow part of a P0.
+
+## Recover and resolve
+
+Do not close because one graph briefly improves. Distinguish:
+
+- **Mitigated:** customer impact is reduced or stopped, but the system may remain fragile.
+- **Monitoring:** the mitigation/fix is deployed and representative signals are under
+  observation for an appropriate window.
+- **Recovered:** business flows, telemetry, backlogs, and downstream systems are healthy;
+  no active impact is observed.
+- **Resolved:** recovery is confirmed, residual risk has an explicit owner, stakeholders
+  are informed, and externally reported issues are updated as applicable.
+
+Draft the resolution announcement only after the evidence contract in
+`live-response.md` is satisfied. A hotfix may impose an additional 30–60 minute
+post-deployment validation window.
+
+## Learn and follow through
+
+**REQUIRED SUB-SKILL:** Use `postmortem` for the document-writing craft when available,
+then apply the Yassir contract in `yassir-policy.md`. If its template asset is unavailable,
+use the seven-section Yassir fallback directly.
+
+Create Jira action items only when explicitly asked. Every Yassir postmortem action has
+a named owner and a Jira ticket with component `Postmortem`. The postmortem is not closed
+until every action is complete.
+
+## Reference routing
+
+- [yassir-policy.md](references/yassir-policy.md) — read for every Yassir incident.
+- [live-response.md](references/live-response.md) — read when declaring or running P0/P1.
+- [special-cases.md](references/special-cases.md) — read for hotfix or security/supply-chain paths.

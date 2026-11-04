@@ -1,22 +1,62 @@
-# Publishing a postmortem to Confluence or Notion
+# Publishing a postmortem
 
-Only do this when the user explicitly asks. Default output is a local Markdown file.
+Read this reference only after the user explicitly asks to publish. Publication creates
+shared state and notifications. Drafting a postmortem does not authorize publication,
+ticket creation, announcements, or changes to the incident record.
 
-Always write (or keep) the local Markdown file first, then publish from it — that way there's a source of truth even if the publish step fails.
+## Authorization and destination
 
-## Confluence (Atlassian Rovo MCP)
+Before the first write, resolve:
 
-1. If you don't already know the target, ask which **space** it should go in (or confirm a space they named). Use `getConfluenceSpaces` / `getVisibleJiraProjects` to resolve names to IDs if needed.
-2. Confluence pages use storage-format HTML, not Markdown. Convert the doc: headings → `<h1>/<h2>`, tables → `<table>`, task list items (`- [ ]`) → Confluence task lists or a simple bulleted list, code spans → `<code>`. Keep it simple and valid — a clean bulleted list beats a broken macro.
-3. Create the page with `createConfluencePage` (title = the postmortem title, body = converted HTML, space = resolved space). If updating an existing page, use `updateConfluencePage`.
-4. Return the page URL to the user.
+- the final or explicitly accepted draft content;
+- platform and workspace/site;
+- exact parent page, database, or space;
+- create a new page versus update an existing one;
+- title, audience, and confidentiality level.
 
-## Notion (Notion MCP)
+If these are already unambiguous in the request and available context, do not ask again.
+Otherwise stop before writing and ask one focused question. Never infer update permission
+from permission to create, or overwrite an existing page merely because the title matches.
 
-1. Ask for (or confirm) the parent page/database the postmortem should live under. Use `notion-search` to locate it if the user names it.
-2. Create the page with `notion-create-pages`. Notion accepts Markdown-ish content blocks, so the conversion is lighter than Confluence — pass the sections as blocks. Tables and to-do items map naturally to Notion table and to-do blocks.
-3. Return the page URL to the user.
+A local Markdown copy is optional. Create one only when the user requests it or has already
+approved a durable local artifact. Honor an explicit request to publish without creating a
+local file.
 
-## After publishing
+## Prepare the content
 
-Tell the user where it went (URL) and confirm the local Markdown copy still exists as the source of truth.
+Remove placeholders and internal template instructions. Preserve headings, timelines,
+tables, task states, links, and code where the destination supports them; use a simpler
+valid representation when it does not. Do not change facts merely to fit the platform.
+
+Check the destination's permissions and intended audience before publishing a security,
+privacy, data, or supply-chain postmortem. Keep secrets, credentials, personal data,
+actionable exploit details, and unnecessary internal topology out of broadly visible pages.
+Use a restricted technical appendix only when authorized and needed.
+
+Use the semantic Notion or Confluence capability available in the current runtime. Tool
+names vary across agents. If no authenticated publishing capability exists, return the
+ready-to-publish content and state that nothing was published.
+
+## Create or update safely
+
+For a new page, search the resolved parent for an existing incident record or equivalent
+postmortem before creating a duplicate. For an update, fetch the current page and preserve
+material links, comments, decisions, and fields outside the authorized replacement scope.
+
+Write once. If a timeout, connection failure, or interrupted response makes the result
+ambiguous, search or fetch the target by parent, title, author, and recent creation/update
+time before retrying. Retry only after confirming that the expected write did not land.
+
+## Verify after writing
+
+Read the result back and verify:
+
+- platform, workspace/site, and parent;
+- page identity, title, and URL;
+- expected status, severity, incident date, and required sections;
+- timeline and action-item content;
+- no raw placeholders or unapproved sensitive detail;
+- no duplicate page or unintended overwrite.
+
+Return the verified URL or page identifier and state whether a local copy exists. If the
+read-back cannot be completed, say publication is unverified rather than claiming success.

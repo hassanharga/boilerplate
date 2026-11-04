@@ -1,60 +1,94 @@
-# Postmortem: [Short incident title]
+# Postmortem template
 
-|                      |                                       |
-| -------------------- | ------------------------------------- |
-| **Date of incident** | YYYY-MM-DD                            |
-| **Authors**          | [names]                               |
-| **Status**           | Draft / In review / Final             |
-| **Severity**         | [e.g. SEV1 / SEV2 / SEV3]             |
-| **Duration**         | [impact start → resolved, total time] |
+Use this as a content contract, not text to copy mechanically. Adapt it to the active
+organization policy and remove all angle-bracket prompts before sharing the document.
+Keep required headings when facts are unknown; mark the exact gap and follow-up needed.
+Omit optional sections that add no information.
+
+# Postmortem: <short incident title>
+
+| Field | Value |
+| --- | --- |
+| Incident date | <YYYY-MM-DD> |
+| Status | <Draft, In review, or Final> |
+| Severity | <organization's incident label and source> |
+| Impact window | <start to recovered, duration, timezone> |
+| Authors | <names or Owner pending> |
+| Incident record | <link or identifier when available> |
 
 ## Summary
 
-Two to four sentences a busy reader can absorb in fifteen seconds: what broke, who it affected, how long it lasted, and what the underlying cause was. Someone should be able to read only this section and understand the incident.
+In two to four natural sentences, state what failed, who or what was affected, how long
+impact lasted, how service recovered, and the confirmed cause or current causal status.
+Do not claim a root cause if it remains under investigation.
 
 ## Impact
 
-What was affected and by how much. Quantify wherever the data exists — users affected, requests failed, error rate, revenue, data loss, SLA/SLO breach. Include what was _not_ affected if that helps bound the blast radius.
+Describe customer, business, operational, data, safety, privacy, and service-level impact
+that is relevant to this incident. Label estimates and bound the blast radius. State a
+confirmed absence, such as no data loss, only when the evidence supports it.
 
-- **User impact:** …
-- **Scope / duration:** …
-- **Data impact:** … (or "none")
+For several dimensions, a small table may help. For a simple incident, use a short
+paragraph or bullets instead of an empty or mostly blank table.
 
 ## Timeline
 
-All times in [timezone]. Note the gap between impact-start and detection — it's often a finding in itself.
+State the timezone once and use absolute timestamps. Include the incident milestones that
+the evidence supports: impact start, detection, declaration, investigation decisions,
+mitigation, recovery, resolution, and important communications. Do not manufacture events
+to fill a standard sequence.
 
-| Time  | Event                                             |
-| ----- | ------------------------------------------------- |
-| HH:MM | [Impact begins — often before anyone noticed]     |
-| HH:MM | [Detection — alert fired / customer reported / …] |
-| HH:MM | [Investigation milestones]                        |
-| HH:MM | [Mitigation applied]                              |
-| HH:MM | [Full resolution]                                 |
+| Time | Event and evidence |
+| --- | --- |
+| <absolute time> | <confirmed event, decision, or correction; link when useful> |
 
-## Root cause
+## Technical and process causes
 
-Explain _why_ this happened, not just _what_ broke. Walk the causal chain down to something systemic. If there were multiple contributing causes, describe each rather than forcing a single line. Keep it blameless — focus on the systems and decisions, not individuals.
+Explain the causal model in direct prose. Distinguish:
 
-## Contributing factors
+- the trigger;
+- confirmed technical and process causes;
+- contributing conditions;
+- detection, coordination, or response gaps;
+- hypotheses or unresolved causal questions.
 
-Things that made the incident more likely, worse, or slower to resolve (missing alerts, stale runbook, unclear ownership, gaps in monitoring). Optional if there were none, but there usually are.
+Do not repeat the timeline or reduce the cause to a person's action.
 
-## Resolution
+## Resolution and recovery
 
-What actually stopped the bleeding, and whether it's a durable fix or a temporary mitigation. Note if luck played a role or if the same fix would work next time.
+Explain what reduced impact, what restored service, how recovery was verified, and which
+parts are temporary mitigation versus durable correction. Note relevant backlog,
+downstream, or data-integrity checks.
 
-## What went well / what went poorly
+## What went well
 
-A short honest reflection. What in the response worked (good alerting, fast rollback) and what didn't (took too long to detect, unclear who owned it). This is where the team learns, not just about the bug but about the response.
+Record specific systems, decisions, or coordination that limited impact or shortened
+recovery. Omit generic praise.
+
+## What did not go well
+
+Record specific system, process, detection, or response gaps. Describe the conditions and
+consequence without blaming an individual.
 
 ## Action items
 
-Concrete, owned follow-ups. Prefer changes to the system over "be more careful." Tag each with whether it helps **prevent**, **detect**, or **mitigate** where useful.
+Each action needs a concrete deliverable, the system outcome it establishes, and an
+acceptance check. Add owner, due date, tracking ticket, priority, component, and
+prevent/detect/mitigate classification when active policy requires them. Never invent a
+missing field. Do not manufacture actions to cover every classification. Keep an
+evidence-based idea as a proposed candidate until the relevant owner validates it.
+Describe the required outcome rather than guessing an unverified implementation detail.
 
-- [ ] [Action] — Owner: [name] — [prevent/detect/mitigate]
-- [ ] …
+For a small list, use readable checklist items:
 
-## Lessons learned
+- [ ] <action>. Outcome: <security or reliability property>. Verification: <observable
+  check>. Owner: <name or pending>. Tracking: <ticket or pending>.
 
-The one or two takeaways worth remembering even after the action items are closed — the generalizable insight a future engineer would benefit from.
+Use a table when several actions need comparison. A Draft may contain pending ownership;
+a Final document may not omit required accountability.
+
+## Open evidence gaps
+
+Include this section only when material facts, causal questions, review decisions, or
+required action ownership remain unresolved. For each gap, name the evidence or owner
+needed to close it.

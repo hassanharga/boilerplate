@@ -96,6 +96,8 @@ The goal: show **self-awareness and active improvement**, not a hidden brag ("I'
 
 > **Aligning on requirements up front.** "Earlier I'd occasionally misread a task when it was handed to me and start before fully aligning. I fixed it by slowing down at the start — I set the context, restate my understanding back to whoever assigned it, and confirm the requirements before I begin. That's cut down rework significantly."
 
+> **Hesitating to ask questions.** "I sometimes held back from asking a question in a meeting or discussion because I worried it might be wrong, off-topic, or sound basic. The cost was that I'd stay unsure longer than needed or work it out alone when a quick question would have saved time. I've worked on this by reminding myself that if I'm unclear, others often are too — so I now ask early, frame it briefly ('just to make sure I understand…'), and if I'm unsure it's on-topic, I note it and follow up right after. I ask much more freely now, and it's helped me get unblocked faster and even surfaced gaps the team hadn't considered."
+
 **Avoid:**
 - Clichés that sound rehearsed: "I work too hard," "I'm a perfectionist," "I care too much."
 - A weakness that's core to the job ("I'm bad at coding" for a dev role).

@@ -1,49 +1,90 @@
 # Publishing the RFC
 
-After the draft is ready, ask the author where it should go. Never publish to an
-external destination (Notion/Confluence) without confirming — it's visible to
-others. Publish to exactly the destination(s) the author picks.
+Read this reference only after the draft is ready and the author has chosen a
+destination. Publishing to Notion or Confluence creates shared state and notifications;
+drafting an RFC does not authorize publishing it.
+
+## Resolve the destination before the first write
+
+Before writing anything, resolve:
+
+- the final or explicitly accepted draft content;
+- platform and workspace or site;
+- the exact parent page, database, space, or folder;
+- create a new page versus update an existing one;
+- title and intended audience.
+
+If these are already unambiguous in the request and available context, do not ask again.
+Otherwise stop and ask one focused question. Never infer permission to update from
+permission to create, and never overwrite an existing page merely because the title
+matches.
+
+The author may want more than one destination — for example the `.md` committed to the
+repository and a mirror in Notion. That is fine; do each in turn from the same draft, and
+name one as the source of truth.
 
 ## Local Markdown file
 
-The simplest option and a good default for repos.
+The simplest option and a good default for repositories.
 
-- Default location: `docs/rfcs/` at the repo root. If that folder doesn't exist,
-  offer to create it, or ask for a preferred path.
-- Filename: `NNNN-kebab-title.md` (zero-padded sequence) if the folder already
-  uses numbering; otherwise `kebab-title.md`. Check existing files first to
-  match the convention.
-- Write the file with the Write tool and report the path.
+- Default location: `docs/rfcs/` at the repository root. If it does not exist, offer to
+  create it or ask for a preferred path.
+- Filename: `NNNN-kebab-title.md` with a zero-padded sequence if the folder already uses
+  numbering; otherwise `kebab-title.md`. Check the existing files first and match the
+  convention rather than imposing one.
+- Write the file, then read it back and report the path.
 
-## Notion page
+Writing a file into a working tree is not the same as committing it. Commit, push, and
+pull-request creation each need their own authorization.
 
-Uses the connected Notion MCP tools.
+## Notion
 
-1. Ask _where_ in Notion it should live if not already told — a parent page or a
-   database (e.g. an "RFCs" or "Engineering Docs" space). Use
-   `notion-search` to locate the parent by name and confirm the match with the
-   author before creating anything.
-2. Create the page under that parent with `notion-create-pages`, passing the RFC
-   title as the page title and the Markdown body as content. Notion's API accepts
-   Markdown for page content, so the same draft works directly.
-3. If the author picked Notion but there's no obvious parent and search finds
-   nothing, ask them to paste the parent page URL/ID rather than guessing.
-4. Report the created page URL.
+Use the connected Notion capability in the current runtime. In Claude Code that is the
+Notion MCP — `notion-search` to locate a parent, `notion-create-pages` to create, and
+`notion-fetch` to read back. Tool names differ across agents, so if those are not present,
+use whatever search, create, and fetch capability the runtime exposes.
 
-## Confluence page
+1. Resolve the parent page or database if the author has not already named one. Search by
+   name and confirm the match with the author before creating anything.
+2. Search that parent for an existing RFC with the same title or subject before creating
+   a new one, so a retry or a forgotten earlier draft does not become a duplicate.
+3. Create the page under that parent with the RFC title and the Markdown body. Notion
+   accepts Markdown for page content, so the draft transfers directly.
+4. If no obvious parent exists and search finds nothing, ask the author to paste the
+   parent page URL or ID rather than guessing.
 
-Uses the connected Atlassian (Rovo) MCP tools.
+## Confluence
 
-1. Identify the target space. Use `getConfluenceSpaces` to list spaces (or
-   `getAccessibleAtlassianResources` first if you need the cloud ID) and confirm
-   which space with the author.
-2. Optionally find a parent page in that space with
-   `searchConfluenceUsingCql` if the RFC should nest under an existing page.
-3. Create the page with `createConfluencePage`, passing the title, space, and the
-   Markdown body (the tool accepts Markdown/storage format for the body).
-4. Report the created page URL.
+Use the connected Atlassian capability. In Claude Code that is the Atlassian MCP —
+`getConfluenceSpaces` to list spaces, `getAccessibleAtlassianResources` first if the cloud
+ID is needed, `searchConfluenceUsingCql` to find a parent page, and `createConfluencePage`
+to create. Fall back to whatever authenticated Confluence capability exists.
 
-## Multiple destinations
+1. Identify the target space and confirm it with the author.
+2. Find the parent page if the RFC should nest under one.
+3. Search for an existing page with the same title in that space before creating.
+4. Create the page with the title, space, and Markdown body.
 
-The author may want more than one (e.g. commit the `.md` to the repo _and_
-mirror it to Notion). That's fine — do each in turn from the same draft.
+## Write once, and recover from ambiguity
+
+A timeout, connection failure, or interrupted response after a write request is
+ambiguous — the platform may have accepted it. Before retrying any write, search or fetch
+the target by parent, title, author, and recent creation time. Retry only after
+confirming the expected page does not exist. Never blindly resend a create request.
+
+## Verify after writing
+
+Read the result back and verify:
+
+- platform, workspace or site, and parent;
+- page identity, title, and URL;
+- the expected sections survived the conversion, including tables and code blocks;
+- no raw placeholders or `_TODO(author)_` markers intended for removal remain;
+- no duplicate page was created and nothing was unintentionally overwritten.
+
+Return the verified URL or page identifier, and state whether a local copy also exists.
+If the read-back cannot be completed, say publication is unverified rather than claiming
+success.
+
+If no authenticated publishing capability is available, return the ready-to-publish
+content and state plainly that nothing was published.

@@ -1,145 +1,124 @@
 ---
 name: core-mobility-jira-ticket
-description: Use when creating or drafting Jira tickets for Yassir Core Mobility, especially CMB tickets for Core squad work, Dispatch Service, LTS, Maps and Routes, Backend, bugs, defects, or work that must align with Core squad monthly metrics.
+description: Use when drafting, splitting, polishing, creating, or updating Jira work items for Yassir Core Mobility/CMB, including Core squad work for Dispatch Service, LTS, Maps and Routes, Backend, bugs, defects, or monthly metrics classification.
 metadata:
   short-description: Create CMB tickets with Core squad conventions
 ---
 
-# Core Mobility Jira Ticket
+# Core Mobility Jira Tickets
 
-Use this skill when the user asks to create, prepare, draft, split, or polish a Jira ticket for Core Mobility work.
+Produce implementation-ready CMB work items that reflect the requested work, preserve source context, and classify Core squad capacity consistently.
 
-## Source Context
+## Authorization
 
-- Jira site: `https://yassir.atlassian.net`
-- Cloud ID: `78a96af4-a80c-47e6-ab86-975e9a422169` (pass as `cloudId` to every Atlassian MCP tool). If a call rejects it, refresh with `getAccessibleAtlassianResources`.
-- Project: `CMB` / Core Mobility
-- Metric guidance source: `Core squad monthly metrics guide` in Notion, page `31ff03bdfe1b80a18ae6d2953fcca865`
-- Observed ticket examples: `CMB-38544`, `CMB-38547`, `CMB-38548`, `CMB-38549`, `CMB-38552`, `CMB-38553`, `CMB-38560`
+| User request                                          | Allowed result                                              |
+| ----------------------------------------------------- | ----------------------------------------------------------- |
+| Draft, prepare, split, or polish                      | Return a preview only; do not write to Jira.                |
+| Explicitly create or update                           | Perform only the described issue mutation after validation. |
+| Transition, assign, comment, link, or add to a sprint | Perform only when explicitly requested.                     |
 
-## MCP Tooling
+For every live Jira read or write, use the connected Atlassian Rovo MCP when it
+is available. Discover its operations by capability, such as accessible-site
+discovery, metadata inspection, JQL search, issue read, create, edit, and
+transition, because exposed function names differ across agents. If Rovo is not
+available, use an equivalent authenticated Atlassian or Jira connector. If no
+authenticated Jira capability is available, provide a complete draft and state
+that Jira was not changed. Do not use `curl` or the Jira web UI as an implicit
+fallback.
 
-Create and edit tickets through the Atlassian Rovo MCP (no `curl`, no web UI):
+For live creation or editing, read [references/cmb-live-configuration.md](references/cmb-live-configuration.md) first.
 
-- `mcp__claude_ai_Atlassian_Rovo__createJiraIssue` — create. Takes `cloudId`, `projectKey: "CMB"`, `issueTypeName`, `summary`, `description` (`contentFormat: "markdown"`). All other fields go in `additional_fields`.
-- `mcp__claude_ai_Atlassian_Rovo__editJiraIssue` — update an existing ticket; custom/standard fields go in `fields`.
-- `mcp__claude_ai_Atlassian_Rovo__getJiraIssue` — read current state before editing (preserve artifacts, see Description Style).
-- `mcp__claude_ai_Atlassian_Rovo__getJiraProjectIssueTypesMetadata` / `getJiraIssueTypeMetaWithFields` — re-confirm an id only if a create/edit call is rejected on a field. Don't fetch metadata pre-emptively; the ids below are verified.
-- `mcp__claude_ai_Atlassian_Rovo__searchJiraIssuesUsingJql` — find related/duplicate tickets or active sprints.
-- `mcp__claude_ai_Atlassian_Rovo__getTransitionsForJiraIssue` — only if asked to move status.
+## Classify for monthly metrics
 
-Field payload shape for `additional_fields` (create) / `fields` (edit):
+Use the metrics guide as policy; recent tickets are context, not authority. The guide
+is the Notion page named in
+[references/cmb-live-configuration.md](references/cmb-live-configuration.md) — fetch it
+rather than relying on the summary below when the classification is contested, when a
+requested component or priority conflicts with policy, or when the cached configuration
+is stale. The table here is a cache of that policy, not the policy itself.
 
-```json
-{
-  "customfield_10513": { "id": "11193" },
-  "components": [{ "id": "10035" }],
-  "customfield_10026": 3
-}
-```
+| Category | Work                                   | Jira classification                                                  |
+| -------- | -------------------------------------- | -------------------------------------------------------------------- |
+| `Tech`   | Explicit technical-roadmap work        | `Backend` component; not Bug or Defect                               |
+| `Prod`   | Feature, microservice, or product work | Non-Backend owning component; not Bug or Defect                      |
+| `Main`   | Maintenance or a problem               | Bug for production; Defect before production; P0 or P1 per the guide |
 
-Select fields (`Squad`) take `{ "id": "..." }`; `components` take an array; `Story Points` is a bare number.
+Service-specific work is `Prod` unless the request or source explicitly identifies it as technical-roadmap work. Renovate review work is also `Prod` unless explicitly tied to that roadmap. Default to one owning component. Never combine `Backend` with a non-Backend component. A `Main` ticket with P2, P3, or no priority is invalid under the metrics guide: ask the user to select P0 or P1 before writing. If any requested component, priority, or work type conflicts with metrics policy, surface the conflict and ask before writing; do not silently accept or relabel it.
 
-## Required Jira Fields
+Jira issue type and metrics category are independent. A Technical Task is not automatically `Tech`; work owned by LTS, Dispatch Service, or Maps and Routes remains `Prod` unless explicit technical-roadmap evidence requires `Backend` and `Tech`.
 
-- `project`: `CMB` / Core Mobility.
-- `summary`: use `[Core][<service-or-area>]: <title>`.
-- `issuetype`: default to `Technical Task` for implementation work.
-- `Squad` / `customfield_10513`: **required**. Set to `Core` unless the user explicitly says otherwise.
-- `components`: **required**. Set the owning service/platform component. Use exactly the component category needed for metrics classification.
-- `Story Points` / `customfield_10026`: use for estimates. Do not use `Story point estimate` / `customfield_10016` (not available on these issue types).
-- `Sprint` / `customfield_10020`: do not set unless the user asks. See Creation Workflow step 7.
+Example: “Create a Technical Task for LTS secondary-datasource work” maps to Project `CMB`, category `Prod`, issue type Technical Task, Squad `Core`, and component `LTS`.
 
-Verified option/component ids (CMB, confirmed against live metadata):
+## Ticket contract
 
-| Field      | Value              | Id      |
-| ---------- | ------------------ | ------- |
-| Squad      | `Core`             | `11193` |
-| Component  | `Backend`          | `10035` |
-| Component  | `Core`             | `10346` |
-| Component  | `Dispatch Service` | `14688` |
-| Component  | `LTS`              | `12434` |
-| Component  | `Maps and Routes`  | `15933` |
-| Issue type | `Technical Task`   | `10030` |
-| Issue type | `Bug`              | `10004` |
-| Issue type | `Defect`           | `10032` |
-
-The component is literally `Maps and Routes` (spelled out, no ampersand). If an id is missing here, fetch it with `getJiraIssueTypeMetaWithFields` before creating.
-
-## Summary Style
-
-Format:
+Use:
 
 ```text
-[Core][<service-or-area>]: <imperative title>
+[Core][<service-or-area>]: <concise outcome or imperative title>
 ```
 
-Examples:
+Default normal implementation work to Technical Task. Set Squad to Core and select the owning component. Add Story Points only when the user supplies an estimate. Add a sprint only when requested, after resolving the current sprint dynamically. Never invent an estimate, priority, sprint, owner, label, parent, or issue relationship.
 
-```text
-[Core][DES]: Implement candidate attribute update persistence
-[Core][LTS]: implementation for secondary datasource
-```
+Every draft, preview, mutation plan, and post-write verification starts with its authorization outcome and this complete field table:
 
-Use a concise service/area tag that matches the work context, such as `DES`, `LTS`, `Maps and Routes`, or `Backend`.
+| Field            | Required value rule                                                          |
+| ---------------- | ---------------------------------------------------------------------------- |
+| Project          | `CMB` / Core Mobility                                                        |
+| Summary          | `[Core][<service-or-area>]: <title>`                                         |
+| Metrics category | Exactly `Tech`, `Prod`, or `Main`; never invent another category             |
+| Issue type       | Technical Task by default; Bug or Defect for `Main` according to environment |
+| Squad            | `Core`                                                                       |
+| Component        | Owning component consistent with the metrics category                        |
+| Optional fields  | Only values supplied by the user or required by current Jira policy          |
 
-## Metrics Classification
+Then provide Description, Acceptance criteria, and any conflicts, open questions, duplicate risk, or unsupported fields. Always name `Core` and the owning component explicitly; do not replace known required values with placeholders such as “from metadata.” An output missing a required row is incomplete.
 
-Before creating the ticket, classify the work for Core squad monthly metrics:
+Keep the table complete but compact. Use one `Optional fields` row that lists only the
+values actually supplied, or says `None supplied`; do not add a separate row for every
+absent optional field. Omit empty conflict and open-question sections rather than printing
+"none." Keep a real limitation, such as an unperformed duplicate search, when the reader
+needs it to understand what was not verified.
 
-- `Tech`: technical roadmap work. Use component `Backend`. Do not combine `Backend` with other service components.
-- `Prod`: product or microservice feature work. Use a non-Backend component such as `Dispatch Service`, `LTS`, or `Maps and Routes`.
-- `Main`: production maintenance. Use issue type `Bug` or `Defect` and priority `P0` or `P1`.
+The complete field table is a pre-write gate. Do not start or describe a mutation sequence until every required row has a concrete value.
 
-Rules from the metrics guide:
+Write a concise description followed by observable, testable acceptance criteria. Include relevant behavior, contracts, persistence, integration, rollout, observability, and unchanged behavior only when supported by the request or sources. Do not fabricate implementation details merely to make the ticket look complete; identify material unknowns as open questions.
 
-- Each team member's work should have a unique Jira ticket created and updated promptly.
-- Each ticket should have either `Backend` or another component, but not both.
-- Renovate review tickets count as `Prod`, not `Tech`, unless the user explicitly ties them to the technical roadmap.
+Write the description and acceptance criteria as a teammate would write them for the
+engineer who will pick up the ticket. Lead with the concrete problem and required outcome;
+do not repeat the summary as an introduction or add generic benefit language. Use short,
+natural sentences and one observable behavior per acceptance criterion. Use Given/When/Then
+only when the team or user asks for it. Remove all placeholders before presenting or writing
+the ticket.
 
-If the category is ambiguous, infer from the work description when low risk. Ask a short clarification only when the component choice would materially affect metrics.
+When polishing an existing issue, read it first; read-only retrieval needs no additional authorization. Preserve still-relevant links, diagrams, schemas, payloads, code blocks, tables, sample data, rollout or migration notes, implementation constraints, and open questions automatically. Reorganize them under clear sections rather than asking whether to retain them. A request to replace or shorten the description authorizes structural rewriting, not removal of these artifacts; remove one only when the user explicitly requests its removal or clearly supersedes it. Without the current issue content, state that no faithful preview can be produced instead of inventing generic text.
 
-## Description Style
+## Splitting an item
 
-Prefer this structure for implementation-ready tickets:
+Two shapes, chosen by what the work actually is:
 
-```markdown
-## Description
+| Situation | Result | Link |
+| --- | --- | --- |
+| Work spans several deliverables under one outcome | An Epic with child Technical Tasks | Parent link on each child |
+| One oversized item is really several independent pieces | Sibling items at the same level | `relates to` between them |
 
-<One concise paragraph describing the work and target behavior.>
+A split is a draft until the user approves it. Present every child with its own complete
+field table before writing anything, then create them sequentially and stop on the first
+failure — a half-written split is worse than none.
 
-## Acceptance criteria
+**Each child is classified on its own work, not inherited from the parent.** The metrics
+guide classifies work, not tickets, so a `Main` bug can legitimately split into a `Main`
+fix and a `Tech` hardening task. Say so explicitly when a split changes the category mix,
+because that moves the monthly numbers and the user may not intend it.
 
-- <Observable criterion>
-- <Observable criterion>
-- <Contract, persistence, integration, or rollout constraint when relevant>
-```
+Never invent a parent, an issue relationship, or a child that the source material does
+not support. If the right division is unclear, propose one and ask rather than guessing.
 
-Keep acceptance criteria field-oriented and testable. Mention unchanged contracts explicitly when relevant.
-When a requirement needs only a subset of available records, encourage fetching the already filtered and sorted result from the datastore instead of loading a broad result set and filtering it in application memory.
+## Draft or mutation workflow
 
-When enhancing or rewriting an existing ticket, preserve existing artifacts unless the user explicitly asks to remove them. Before updating a description, inspect the current description and carry forward:
-
-- links to Notion pages, docs, diagrams, spikes, PRs, or external references
-- inline schemas, payload examples, code blocks, tables, and sample data
-- implementation notes, open questions, datasource considerations, and migration/rollout notes
-- user-authored constraints that are not superseded by the requested change
-
-If the cleaned structure needs to move these items, keep them under explicit sections such as `## Source artifact`, `## Storage sketch`, `## Implementation note`, or `## Open questions`. Do not replace the whole description with only `Description` and `Acceptance criteria` when doing so would discard useful source context.
-
-## Creation Workflow
-
-1. Identify category: `Tech`, `Prod`, or `Main`.
-2. Select issue type:
-   - `Technical Task` for normal implementation work.
-   - `Bug` or `Defect` for `Main` work.
-3. Select exactly one component category:
-   - `Backend` for `Tech`.
-   - Service/platform component for `Prod`.
-   - Relevant production area component for `Main`.
-4. Build the summary with `[Core][<service-or-area>]: ...`.
-5. Set `Squad` to `Core` (`customfield_10513: { "id": "11193" }`).
-6. Set `Story Points` via `customfield_10026` if the user gives an estimate.
-7. Do not hard-code sprint values. If the user asks to add the ticket to a sprint, find the active sprint via `searchJiraIssuesUsingJql` / sprint metadata first, then set `customfield_10020`.
-8. Create with `createJiraIssue` (`projectKey: "CMB"`, `cloudId`, `issueTypeName`, `summary`, `description` as markdown, everything else in `additional_fields`). To enhance an existing ticket, `getJiraIssue` first, then `editJiraIssue`.
-9. Report the created/updated issue key and URL back to the user.
+1. Establish work intent, environment, owning area, metrics category, issue type, and requested optional fields. Ask one short question only when ambiguity materially changes the ticket.
+2. For an existing issue, read its current state. For a new issue, search narrowly for a likely duplicate or related ticket. A clear duplicate requires user direction before creation.
+3. Build and present the complete field set and description. A request to draft, split, or polish stops here.
+4. Before a write, discover the accessible site and current issue-type fields. Treat cached IDs as hints, not permanent truth.
+5. Create or edit only after the authorization and policy gates pass. If a requested optional field requires a create-then-edit sequence, keep both operations within the authorized ticket scope. For multiple tickets, write sequentially and stop on the first failure.
+6. If any write result is ambiguous, fetch/search for the expected issue before retrying; never risk duplicate creation.
+7. Read the result back and verify summary, type, Squad, components, description, and every requested optional field. Report the issue key and URL plus any rejected, omitted, or partially applied field. Never call a partial result complete.
