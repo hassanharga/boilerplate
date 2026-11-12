@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Datadog with pup'
+  short_description: 'Use the pup CLI for Datadog work'
+  default_prompt: 'Use $datadog-pup to investigate this in Datadog.'
